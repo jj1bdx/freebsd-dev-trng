@@ -6,6 +6,13 @@
  * Section 9.3. Character Devices,
  * Chapter 9. Writing FreeBSD Device Drivers,
  * FreeBSD Architecture Handbook, Revision 43184
+ *
+ * Original authors of
+ * Simple Echo pseudo-device KLD:
+ * 
+ * Murray Stokely
+ * Søren (Xride) Straarup
+ * Eitan Adler
  * 
  * random_harvest injection code added by Kenji Rikitake
  *
