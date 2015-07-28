@@ -39,6 +39,10 @@ kern.random.sys.harvest.ethernet=1` to enable harvesting from the Ethernet
 traffic. See random(4) for the details. *TODO: an entirely new class should be
 introduced.*
 
+## Version
+
+28-JUL-2015: 0.0.1 (initial release)
+
 ## How to compile and load
 
     make
