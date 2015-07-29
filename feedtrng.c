@@ -40,9 +40,8 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
             if (wsize < rsize) {
                 fprintf(stderr,
-                    "feedtrng: wsize %d < rsize %d, abort\n",
+                    "feedtrng: wsize %d < rsize %d, continuing\n",
                     (int)wsize, (int)rsize);
-                exit(-1);
             }
 #endif
         }
