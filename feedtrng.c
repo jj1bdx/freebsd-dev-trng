@@ -37,13 +37,22 @@ int main(int argc, char *argv[]) {
                 exit(-1);
             }
 #ifdef DEBUG
+            fprintf(stderr,
+                "feedtrng: wsize %d rsize %d\n",
+                (int)wsize, (int)rsize);
             if (wsize < rsize) {
                 fprintf(stderr,
-                    "feedtrng: wsize %d < rsize %d, continuing\n",
-                    (int)wsize, (int)rsize);
+                    "feedtrng: wsize < rsize, continuing\n");
             }
 #endif
         }
+#ifdef DEBUG
+        else {
+            fprintf(stderr,
+                    "feedtrng: rsize %d, < 2 and no write\n",
+                    (int)rsize);
+        }
+#endif
     }
     /* notreached */
     return 0;
