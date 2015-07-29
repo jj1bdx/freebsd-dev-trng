@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
     int ttyfd, trngfd;
     ssize_t rsize, wsize;
     int i;
-    struct timespec tim;
 
     /* open TRNG tty */
     if ((ttyfd = open("/dev/cuaU0", O_RDONLY)) == -1) {
@@ -25,10 +24,6 @@ int main(int argc, char *argv[]) {
         perror("feedtrng: cannot open trng");
         exit(-1);
     }
-
-    /* 1000 microseconds */
-    tim.tv_sec = 0;
-    tim.tv_nsec = 1000 * 1000L;
 
     /* infinite loop */
     while (1) {
@@ -45,20 +40,13 @@ int main(int argc, char *argv[]) {
                     "feedtrng: rsize %d after read\n",
                     (int)rsize);
 #endif
+            /* add the number of bytes read */
             i += rsize;
 #ifdef DEBUG
             fprintf(stderr,
                     "feedtrng: i %d after read\n",
                     (int)i);
 #endif
-            /* when rsize = 0, wait and retry */
-            if (rsize == 0) {
-                /* wait before trying to get a character */
-                if (nanosleep(&tim, NULL) == -1) {
-                    perror("feedtrng: nanosleep failed");
-                    exit(-1);
-                }
-            }
         }
         /* rewinding required for each writing */
         if ((wsize = pwrite(trngfd, rbuf,
