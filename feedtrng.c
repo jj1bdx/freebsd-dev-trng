@@ -11,7 +11,6 @@ int main(int argc, char *argv[]) {
     uint8_t rbuf[BUFFERSIZE];
     int ttyfd, trngfd;
     ssize_t rsize, wsize;
-    int errorcode;
 
     /* open TRNG tty and trng */
     if ((ttyfd = open("/dev/cuaU0", O_RDONLY)) == -1) {
