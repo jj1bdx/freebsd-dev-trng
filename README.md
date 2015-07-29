@@ -41,21 +41,17 @@ introduced.*
 
 ## Version
 
-29-JUL-2015: 0.0.2 (fix feedtrng code)
+29-JUL-2015: 0.0.3 (fix feedtrng code)
 28-JUL-2015: 0.0.1 (initial release)
 
 ## How to compile and load /dev/trng
 
-    make
+    make clean && make all
     # run following as a superuser
     kldload ./trng.ko
     # give necessary access permission to /dev/trng
     chown uucp:dialer /dev/trng
     chmod 660 /dev/trng
-
-## How to compile feedtrng
-
-    cc -O -o feedtrng feedtrng.c
 
 ## License
 
