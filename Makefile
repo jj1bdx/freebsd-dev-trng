@@ -1,6 +1,7 @@
-# Note: It is important to make sure you include the <bsd.kmod.mk> makefile after declaring the KMOD and SRCS variables.
+all: trngdev feedtrng
 
-KMOD    =  trng
-SRCS    =  trng.c
+trngdev:
+	@make -f Makefile.trngdev
 
-.include <bsd.kmod.mk>
+feedtrng:
+	@make -f Makefile.feedtrng
