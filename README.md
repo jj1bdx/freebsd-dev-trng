@@ -55,7 +55,7 @@ introduced.*
 
 ## How to compile feedtrng
 
-    cc -o feedtrng feedtrng.c
+    cc -O -o feedtrng feedtrng.c
 
 ## License
 
