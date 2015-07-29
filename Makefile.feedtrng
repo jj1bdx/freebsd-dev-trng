@@ -1,0 +1,6 @@
+PROG=	feedtrng
+SRCS=	feedtrng.c
+
+CFLAGS=	-g -O2 -pipe -std=c99 -pedantic -Wall
+
+.include <bsd.prog.mk>
