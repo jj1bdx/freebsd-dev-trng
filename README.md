@@ -18,8 +18,8 @@ entire FreeBSD operating system.*
 ## How this works
 
 This driver works as `/dev/trng`, and accepts up to 16-byte write operation to
-feed it as an entropy string to random_harvest(9). Use write(2) for writing to
-the device. `feedtrng.py` is a Python code example.
+feed it as an entropy string to random_harvest(9). Use pwrite(2) with offset 0
+(zero) for writing to the device. `feedtrng.c` is a C code example.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
 
@@ -41,9 +41,10 @@ introduced.*
 
 ## Version
 
+29-JUL-2015: 0.0.2 (fix feedtrng code)
 28-JUL-2015: 0.0.1 (initial release)
 
-## How to compile and load
+## How to compile and load /dev/trng
 
     make
     # run following as a superuser
@@ -52,9 +53,13 @@ introduced.*
     chown uucp:dialer /dev/trng
     chmod 660 /dev/trng
 
+## How to compile feedtrng
+
+    cc -o feedtrng feedtrng.c
+
 ## License
 
-See `trng.c`, the same as FreeBSD Architecture Handbook.
+The same as FreeBSD Architecture Handbook. See LICENSE.
 
 ## References
 
