@@ -2,6 +2,7 @@ PROG=	feedtrng
 SRCS=	feedtrng.c
 MAN=
 
-CFLAGS=	-O2 -pipe -std=c99 -pedantic -Wall
+#CFLAGS+= -DDEBUG -g
+CFLAGS+= -O2 -pipe -std=c99 -pedantic -Wall
 
 .include <bsd.prog.mk>

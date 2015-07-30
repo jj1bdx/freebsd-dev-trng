@@ -3,4 +3,6 @@
 KMOD    =  trng
 SRCS    =  trng.c
 
+#CFLAGS  += -DDEBUG -g
+
 .include <bsd.kmod.mk>
