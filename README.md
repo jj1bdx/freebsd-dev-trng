@@ -41,6 +41,7 @@ introduced.*
 
 ## Version
 
+30-JUL-2015: 0.0.4 (fix on code)
 29-JUL-2015: 0.0.3 (fix feedtrng code)
 28-JUL-2015: 0.0.1 (initial release)
 
