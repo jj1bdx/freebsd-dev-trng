@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define BUFFERSIZE 16
+#define BUFFERSIZE (512)
 
 int main(int argc, char *argv[]) {
 
-    uint8_t rbuf[BUFFERSIZE];
+    uint8_t rbuf[BUFFERSIZE], *p;
     int ttyfd, trngfd;
     ssize_t rsize, wsize;
     int i;
@@ -28,9 +28,9 @@ int main(int argc, char *argv[]) {
     /* infinite loop */
     while (1) {
         /* fill the receive buffer first */
-        for (i = 0; i < BUFFERSIZE; ) {
+        for (i = 0, p = rbuf; i < BUFFERSIZE; ) {
             /* try reading from tty */
-            if ((rsize = read(ttyfd, &rbuf + i,
+            if ((rsize = read(ttyfd, p + i,
                             BUFFERSIZE - i)) == -1) {
                 perror("feedtrng: read from tty failed");
                 exit(-1);
@@ -48,10 +48,8 @@ int main(int argc, char *argv[]) {
                     (int)i);
 #endif
         }
-        /* rewinding required for each writing */
-        if ((wsize = pwrite(trngfd, rbuf,
-                       (size_t)BUFFERSIZE,
-                       (off_t)0)) == -1) {
+        if ((wsize = write(trngfd, rbuf,
+                       (size_t)BUFFERSIZE)) == -1) {
             perror("feedtrng: trng write failed");
             exit(-1);
         }
