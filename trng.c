@@ -42,14 +42,9 @@
 #include <sys/malloc.h>
 #include <sys/random.h>
 
-/* this buffer size is small */
-/* see random_harvest(9) */
-#define BUFFERSIZE 16
-
 /* Function prototypes */
 static d_open_t      trng_open;
 static d_close_t     trng_close;
-static d_read_t      trng_read;
 static d_write_t     trng_write;
 
 /* Character device entry points */
@@ -57,22 +52,12 @@ static struct cdevsw trng_cdevsw = {
     .d_version = D_VERSION,
     .d_open = trng_open,
     .d_close = trng_close,
-    .d_read = trng_read,
     .d_write = trng_write,
     .d_name = "trng",
 };
 
-struct s_trng {
-    char msg[BUFFERSIZE + 1];
-    int len;
-};
-
 /* vars */
 static struct cdev *trng_dev;
-static struct s_trng *trngmsg;
-
-MALLOC_DECLARE(M_ECHOBUF);
-MALLOC_DEFINE(M_ECHOBUF, "trngbuffer", "buffer for trng module");
 
 /*
  * This function is called by the kld[un]load(2) system calls to
@@ -96,13 +81,10 @@ trng_loader(struct module *m __unused, int what, void *arg __unused)
         if (error != 0)
             break;
 
-        trngmsg = malloc(sizeof(*trngmsg), M_ECHOBUF, M_WAITOK |
-            M_ZERO);
         printf("trng: device loaded.\n");
         break;
     case MOD_UNLOAD:
         destroy_dev(trng_dev);
-        free(trngmsg, M_ECHOBUF);
         printf("trng: device unloaded.\n");
         break;
     default:
@@ -135,17 +117,9 @@ trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
     return (0);
 }
 
-/*
- * The read function just takes the buf that was saved via
- * trng_write() and returns it to userland for accessing.
- * uio(9)
- */
-static int
-trng_read(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
-{
-    /* operation not supported by device */
-    return (ENODEV);
-}
+/* this buffer size is small */
+/* see random_harvest(9) */
+#define BUFFERSIZE 16
 
 /*
  * trng_write takes in a character string and
@@ -156,38 +130,28 @@ static int
 trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 {
     size_t amt;
-    int error;
+    int error = 0;
+    uint8_t buf[BUFFERSIZE];
 
-    /*
-     * We either write from the beginning or are appending -- do
-     * not allow random access.
-     */
-    if (uio->uio_offset != 0 && (uio->uio_offset != trngmsg->len)) {
-        return (EINVAL);
-    }
-    /* This is a new message, reset length */
-    if (uio->uio_offset == 0) {
-        trngmsg->len = 0;
-    }
-
-    /* Copy the string in from user memory to kernel memory */
-    amt = MIN(uio->uio_resid, (BUFFERSIZE - trngmsg->len));
-
-    error = uiomove(trngmsg->msg + uio->uio_offset, amt, uio);
-
-    /* Now we need to null terminate and record the length */
-    trngmsg->len = uio->uio_offset;
-    trngmsg->msg[trngmsg->len] = 0;
-
-    if (error != 0) {
-        uprintf("trng: write failed: bad address!\n");
-    } else {
+    /* Copy the string to kernel memory */
+    while (uio->uio_resid > 0) {
+#ifdef DEBUG
+        uprintf("trng: uio->uio_resid: %zd\n", uio->uio_resid);
+#endif /* DEBUG */
+        amt = MIN(uio->uio_resid, BUFFERSIZE);
+        error = uiomove(buf, amt, uio);
+        if (error != 0) {
+            break;
+        } 
         /* Enter the obtained data into random_harvest(9) */
-        random_harvest(trngmsg->msg, trngmsg->len,
-        /* Caution: treated as a PURE random number sequence */
-        (trngmsg->len) * NBBY / 2,
-        /* TODO: must add a new class */
-        RANDOM_NET_ETHER);
+        random_harvest(buf, amt,
+            /* Caution: treated as a PURE random number sequence */
+                    amt * NBBY / 2,
+            /* TODO: must add a new class */
+                    RANDOM_NET_ETHER);
+#ifdef DEBUG
+        uprintf("trng: put %zu bytes to random_harvest\n", amt);
+#endif /* DEBUG */
     }
     return (error);
 }
