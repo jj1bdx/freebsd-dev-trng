@@ -61,7 +61,7 @@ introduced.*
     chown uucp:dialer /dev/trng
     chmod 660 /dev/trng
 
-## stty settings required for raw more
+## stty settings required for raw mode
 
     # result of `stty -f /dev/cuaU0`
     # (use `stty -f /dev/cuaU0.init speed 115200 clocal raw` to configure)
