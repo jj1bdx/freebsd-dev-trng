@@ -1,4 +1,4 @@
-# An entropy injection device driver for FreeBSD
+# /dev/trng: an entropy injection device driver for FreeBSD
 
 ## WARNING
 
@@ -7,19 +7,24 @@ which might be caused by the use of this software. Caveat emptor.
 
 ## What this driver is for
 
-To accept True Random Number Generator (TRNG) random bits into FreeBSD kernel.
+To accomodate True Random Number Generator (TRNG) random bits into FreeBSD
+kernel.
 
 ## IMPORTANT SECURITY NOTICE
 
-*Note well: providing incorrect permission to the device loaded by this driver
-may degrade the quality of /dev/random, /dev/urandom, and the security of the
-entire FreeBSD operating system.*
+*Note well: providing incorrect permission and unauthenticated or unscreened
+data to the device driver /dev/trng may degrade the quality of /dev/random,
+/dev/urandom, and the security of the entire FreeBSD operating system.*
 
 ## How this works
 
-This driver works as `/dev/trng`, and accepts up to 16-byte write operation to
-feed it as an entropy string to random_harvest(9). Use pwrite(2) with offset 0
-(zero) for writing to the device. `feedtrng.c` is a C code example.
+The driver in `trng.c` works as `/dev/trng`, and accepts up to 1024-byte write
+operation to feed the written data as an entropy string by calling
+random\_harvest(9) multiple times. 16 bytes are passed for each time when
+random\_harvest(9) is called. 
+
+`feedtrng.c` is a C code example to transfer TRNG data from a tty device to
+`/dev/trng`.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
 
@@ -32,7 +37,8 @@ Rikitake develops the software and hardware):
 * [avrhwrng](https://github.com/jj1bdx/avrhwrng/), an experimental hardware on Arduino Duemilanove/UNO
 
 Currently, the random bits in the given entropy strings are estimated as 1/2 of
-the given bits, which is a common practice for accepting TRNG sequences.
+the given bits, which is a common practice for accepting TRNG sequences in the
+FreeBSD crypto device drivers.
 
 The entropy source is currently indicated as `RANDOM_NET_ETHER`. Set `sysctl
 kern.random.sys.harvest.ethernet=1` to enable harvesting from the Ethernet
@@ -41,22 +47,33 @@ introduced.*
 
 ## Version
 
+* 4-AUG-2015: 0.0.5 (fix trng dev code)
 * 30-JUL-2015: 0.0.4 (fix on code)
 * 29-JUL-2015: 0.0.3 (fix feedtrng code)
 * 28-JUL-2015: 0.0.1 (initial release)
 
 ## How to compile and load /dev/trng
 
-    make clean && make all
+    make clean all
     # run following as a superuser
     kldload ./trng.ko
     # give necessary access permission to /dev/trng
     chown uucp:dialer /dev/trng
     chmod 660 /dev/trng
 
+## stty settings required for raw more
+
+    # result of `stty -f /dev/cuaU0`
+    # (use `stty -f /dev/cuaU0.init speed 115200 clocal raw` to configure)
+    speed 115200 baud;
+    lflags: -icanon -isig -iexten -echo
+    iflags: -icrnl -ixon -imaxbel ignbrk -brkint
+    oflags: -opost tab0
+    cflags: cs8 -parenb clocal
+
 ## License
 
-The same as FreeBSD Architecture Handbook. See LICENSE.
+BSD 2-clause. See LICENSE.
 
 ## References
 
