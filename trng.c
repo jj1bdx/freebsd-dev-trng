@@ -131,7 +131,10 @@ trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
 
 /* this buffer size is small */
 /* see random_harvest(9) */
-#define BUFFERSIZE 16
+#define BUFFERSIZE (16)
+
+/* maximum uio_resid size */
+#define MAXUIOSIZE (1024)
 
 /*
  * trng_write takes in a character string and
@@ -142,18 +145,26 @@ static int
 trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 {
     size_t amt;
-    int error = 0;
+    int error;
     uint8_t buf[BUFFERSIZE];
 
+#ifdef DEBUG
+    uprintf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
+#endif /* DEBUG */
+    /* check uio_resid size */
+    if ((uio->uio_resid < 0) || (uio->uio_resid > MAXUIOSIZE)) {
+#ifdef DEBUG
+        uprintf("trng_write: invalid uio->uio_resid\n");
+#endif /* DEBUG */
+        return (EIO);
+    }
     /* Copy the string to kernel memory */
     while (uio->uio_resid > 0) {
-#ifdef DEBUG
-        uprintf("trng: uio->uio_resid: %zd\n", uio->uio_resid);
-#endif /* DEBUG */
         amt = MIN(uio->uio_resid, BUFFERSIZE);
         error = uiomove(buf, amt, uio);
         if (error != 0) {
-            break;
+            /* error exit */
+            return error;
         } 
         /* Enter the obtained data into random_harvest(9) */
         random_harvest(buf, amt,
@@ -162,10 +173,11 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
             /* TODO: must add a new class */
                     RANDOM_NET_ETHER);
 #ifdef DEBUG
-        uprintf("trng: put %zu bytes to random_harvest\n", amt);
+        uprintf("trng_write: put %zu bytes to random_harvest\n", amt);
 #endif /* DEBUG */
     }
-    return (error);
+    /* normal exit */
+    return 0;
 }
 
 DEV_MODULE(trng, trng_loader, NULL);
