@@ -76,21 +76,35 @@ static struct cdevsw trng_cdevsw = {
 struct trng_softc {
     device_t device;
     struct cdev *cdev;
+    /* for rndtest device */
+    struct rndtest_state *rndtest;
+    void (*harvest)(struct rndtest_state *, void *, u_int);
 };
+
 
 static devclass_t trng_devclass;
 
+static void
+default_harvest(struct rndtest_state *rsp, void *buf, u_int count)
+{
+    /* Caution: treated as a PURE random number sequence */
+    /* TODO: must add a new class */
+    random_harvest(buf, count, count * NBBY /2, RANDOM_NET_ETHER);
+}
+
 static void trng_identify(driver_t *driver, device_t parent)
 {
-    if (BUS_ADD_CHILD(parent, 33, "trng", 0) == NULL) {
-        printf("trng: trng_identify failed\n");
+    device_t dev;
+    dev = device_find_child(parent, "trng", -1);
+    if (!dev) {
+        BUS_ADD_CHILD(parent, 0, "trng", -1);
     }
 }
 
 static int trng_probe(device_t dev)
 {
-    /* do nothing here */
-    return (0);
+    device_set_desc(dev, "trng");
+    return (BUS_PROBE_SPECIFIC);
 }
 
 static int trng_attach(device_t dev)
@@ -106,6 +120,16 @@ static int trng_attach(device_t dev)
         "trng");
     if (error == 0) {
         sc->cdev->si_drv1 = sc;
+#ifdef RNDTEST
+        sc->rndtest = rndtest_attach(dev);
+        if (sc->rndtest) {
+            sc->harvest = rndtest_harvest;
+        } else {
+            sc->harvest = default_harvest;
+        }
+#else /* !RNDTEST */
+        sc->harvest = default_harvest;
+#endif /* RNDTEST */
     }
     return (error);
 }
@@ -114,6 +138,11 @@ static int trng_detach(device_t dev)
 {
     struct trng_softc *sc = device_get_softc(dev);
 
+#ifdef RNDTEST
+    if (sc->rndtest) {
+        rndtest_detach(sc->rndtest);
+    }
+#endif /* RNDTEST */
     destroy_dev(sc->cdev);
     return (0);
 }
@@ -164,10 +193,12 @@ trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
 static int
 trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 {
+    struct trng_softc *sc;
     size_t amt;
     int error;
     uint8_t buf[BUFFERSIZE];
 
+    sc = dev->si_drv1;
 #ifdef DEBUG
     printf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
 #endif /* DEBUG */
@@ -187,11 +218,7 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
             return error;
         } 
         /* Enter the obtained data into random_harvest(9) */
-        random_harvest(buf, amt,
-            /* Caution: treated as a PURE random number sequence */
-                    amt * NBBY / 2,
-            /* TODO: must add a new class */
-                    RANDOM_NET_ETHER);
+        (*sc->harvest)(sc->rndtest, buf, amt);
 #ifdef DEBUG
         printf("trng_write: put %zu bytes to random_harvest\n", amt);
 #endif /* DEBUG */
@@ -202,3 +229,6 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 
 /* TODO: is adding to "nexus" ok? */
 DRIVER_MODULE(trng, nexus, trng_driver, trng_devclass, 0, 0);
+#ifdef RNDTEST
+MODULE_DEPEND(trng, rndtest, 1, 1, 1);
+#endif /* RNDTEST */
