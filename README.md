@@ -47,6 +47,7 @@ introduced.*
 
 ## Version
 
+* 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
 * 4-AUG-2015: 0.0.5 (fix trng dev code)
 * 30-JUL-2015: 0.0.4 (fix on code)
 * 29-JUL-2015: 0.0.3 (fix feedtrng code)
