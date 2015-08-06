@@ -86,9 +86,9 @@ trng_loader(struct module *m __unused, int what, void *arg __unused)
             &trng_dev,
             &trng_cdevsw,
             0,
-            UID_ROOT,
-            GID_WHEEL,
-            0600,
+            UID_UUCP,
+            GID_DIALER,
+            0660,
             "trng");
         if (error != 0)
             break;
