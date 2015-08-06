@@ -5,6 +5,6 @@ SRCS    =  trng.c
 SRCS    += device_if.h bus_if.h
 
 #CFLAGS  += -DDEBUG -g
-#CFLAGS	+= -DRNDTEST
+CFLAGS	+= -DRNDTEST
 
 .include <bsd.kmod.mk>
