@@ -79,6 +79,7 @@ struct trng_softc {
     /* for rndtest device */
     struct rndtest_state *rndtest;
     void (*harvest)(struct rndtest_state *, void *, u_int);
+    char *idstring;
 };
 
 
@@ -124,11 +125,14 @@ static int trng_attach(device_t dev)
         sc->rndtest = rndtest_attach(dev);
         if (sc->rndtest) {
             sc->harvest = rndtest_harvest;
+            sc->idstring = "rngtest_harvest";
         } else {
             sc->harvest = default_harvest;
+            sc->idstring = "default_harvest";
         }
 #else /* !RNDTEST */
         sc->harvest = default_harvest;
+        sc->idstring = "default_harvest";
 #endif /* RNDTEST */
     }
     return (error);
@@ -220,7 +224,8 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
         /* Enter the obtained data into random_harvest(9) */
         (*sc->harvest)(sc->rndtest, buf, amt);
 #ifdef DEBUG
-        printf("trng_write: put %zu bytes to random_harvest\n", amt);
+        printf("trng_write: put %zu bytes to %s\n",
+                amt, sc->idstring);
 #endif /* DEBUG */
     }
     /* normal exit */
