@@ -125,7 +125,7 @@ static int trng_attach(device_t dev)
         sc->rndtest = rndtest_attach(dev);
         if (sc->rndtest) {
             sc->harvest = rndtest_harvest;
-            sc->idstring = "rngtest_harvest";
+            sc->idstring = "rndtest_harvest";
         } else {
             sc->harvest = default_harvest;
             sc->idstring = "default_harvest";
