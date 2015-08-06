@@ -45,14 +45,19 @@
  */
 
 #include <sys/types.h>
+#include <sys/systm.h>
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/bus.h>
 #include <sys/module.h>
-#include <sys/systm.h>  /* uprintf */
-#include <sys/param.h>  /* defines used in kernel.h */
-#include <sys/kernel.h> /* types used in module initialization */
-#include <sys/conf.h>   /* cdevsw struct */
-#include <sys/uio.h>    /* uio struct */
+#include <sys/conf.h>
+#include <sys/uio.h>
 #include <sys/malloc.h>
+
 #include <sys/random.h>
+#ifdef RNDTEST
+#include <dev/rndtest/rndtest.h>
+#endif /* RNDTEST */
 
 /* Function prototypes */
 static d_open_t      trng_open;
@@ -68,43 +73,64 @@ static struct cdevsw trng_cdevsw = {
     .d_name = "trng",
 };
 
-/* vars */
-static struct cdev *trng_dev;
+struct trng_softc {
+    device_t device;
+    struct cdev *cdev;
+};
 
-/*
- * This function is called by the kld[un]load(2) system calls to
- * determine what actions to take when a module is loaded or unloaded.
- */
-static int
-trng_loader(struct module *m __unused, int what, void *arg __unused)
+static devclass_t trng_devclass;
+
+static void trng_identify(driver_t *driver, device_t parent)
 {
+    if (BUS_ADD_CHILD(parent, 33, "trng", 0) == NULL) {
+        printf("trng: trng_identify failed\n");
+    }
+}
+
+static int trng_probe(device_t dev)
+{
+    /* do nothing here */
+    return (0);
+}
+
+static int trng_attach(device_t dev)
+{
+    struct trng_softc *sc = device_get_softc(dev);
+    // int unit = device_get_unit(dev);
     int error = 0;
 
-    switch (what) {
-    case MOD_LOAD:                /* kldload */
-        error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK,
-            &trng_dev,
-            &trng_cdevsw,
-            0,
-            UID_UUCP,
-            GID_DIALER,
-            0660,
-            "trng");
-        if (error != 0)
-            break;
-
-        printf("trng: device loaded.\n");
-        break;
-    case MOD_UNLOAD:
-        destroy_dev(trng_dev);
-        printf("trng: device unloaded.\n");
-        break;
-    default:
-        error = EOPNOTSUPP;
-        break;
+    sc->device = dev;
+    error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK,
+        &(sc->cdev), &trng_cdevsw, 0,
+        UID_UUCP, GID_DIALER, 0660,
+        "trng");
+    if (error == 0) {
+        sc->cdev->si_drv1 = sc;
     }
     return (error);
 }
+
+static int trng_detach(device_t dev)
+{
+    struct trng_softc *sc = device_get_softc(dev);
+
+    destroy_dev(sc->cdev);
+    return (0);
+}
+
+static device_method_t trng_methods[] = {
+    DEVMETHOD(device_identify, trng_identify),
+    DEVMETHOD(device_probe, trng_probe),
+    DEVMETHOD(device_attach, trng_attach),
+    DEVMETHOD(device_detach, trng_detach),
+    DEVMETHOD_END
+};
+
+static driver_t trng_driver = {
+    "trng",
+    trng_methods,
+    sizeof(struct trng_softc)
+};
 
 static int
 trng_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
@@ -112,9 +138,6 @@ trng_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
 {
     int error = 0;
     /* really do nothing */
-#ifdef DEBUG
-    uprintf("Opened device \"trng\" successfully.\n");
-#endif /* DEBUG */
     return (error);
 }
 
@@ -123,9 +146,6 @@ trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
     struct thread *td __unused)
 {
     /* really do nothing */
-#ifdef DEBUG
-    uprintf("Closing device \"trng\".\n");
-#endif /* DEBUG */
     return (0);
 }
 
@@ -149,12 +169,12 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
     uint8_t buf[BUFFERSIZE];
 
 #ifdef DEBUG
-    uprintf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
+    printf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
 #endif /* DEBUG */
     /* check uio_resid size */
     if ((uio->uio_resid < 0) || (uio->uio_resid > MAXUIOSIZE)) {
 #ifdef DEBUG
-        uprintf("trng_write: invalid uio->uio_resid\n");
+        printf("trng_write: invalid uio->uio_resid\n");
 #endif /* DEBUG */
         return (EIO);
     }
@@ -173,11 +193,12 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
             /* TODO: must add a new class */
                     RANDOM_NET_ETHER);
 #ifdef DEBUG
-        uprintf("trng_write: put %zu bytes to random_harvest\n", amt);
+        printf("trng_write: put %zu bytes to random_harvest\n", amt);
 #endif /* DEBUG */
     }
     /* normal exit */
     return 0;
 }
 
-DEV_MODULE(trng, trng_loader, NULL);
+/* TODO: is adding to "nexus" ok? */
+DRIVER_MODULE(trng, nexus, trng_driver, trng_devclass, 0, 0);
