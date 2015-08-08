@@ -7,7 +7,7 @@ Generator (TRNG) *after* testing the stochastic property of the RNG data
 stream.  The data passed the test are handed over to random_harvest(9)
 with the class `RANDOM_PURE_RNDTEST`.
 
-rndtest(4) provides the following three functions:
+rndtest(4) provides the following three functions in the header file `<dev/rndtent/rndtest.h>`:
 
 * `rndtest_attach()`: allocating a set of rndtest(4) resource for a given
   device of Newbus.
@@ -39,6 +39,4 @@ some things to consider:
   a function pointer, which is found in safe(4), hifn(4), and also in
   trng, will make this process easier.
 
-[End of memorandom]
-
-
+[End of memorandum]
