@@ -52,7 +52,7 @@ introduced.*
 
 ## Version
 
-* 11-AUG-2015: 0.1.1 (feedtrng revised to accept device name)
+* 11-AUG-2015: 0.1.1 (feedtrng revised to accept `/dev/cua*` device name)
 * 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
 * 4-AUG-2015: 0.0.5 (fix trng dev code)
 * 30-JUL-2015: 0.0.4 (fix on code)
@@ -68,7 +68,7 @@ introduced.*
 
 ## How to run feedtrng
 
-    # /dev/[device] will be accepted
+    # Only /dev/cua* devices are accepted
     feedtrng -d /dev/cuaU0
     # only the basename(3) part is used and attached to `/dev/` directly
     # so this is also OK
