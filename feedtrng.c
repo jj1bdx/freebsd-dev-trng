@@ -44,7 +44,7 @@
 
 void usage(void) {
     fprintf(stderr, "Usage: %s -d cua-device\n", CMDNAME);
-    fprintf(stderr, "Only cua[.+] are /dev/cua[.+] are accepted\n");
+    fprintf(stderr, "Only cua[.+] and /dev/cua[.+] are accepted\n");
     fprintf(stderr, "Usage: %s -h for help\n", CMDNAME);
     exit (-1);
 }
