@@ -16,6 +16,11 @@ kernel.
 data to the device driver /dev/trng may degrade the quality of /dev/random,
 /dev/urandom, and the security of the entire FreeBSD operating system.*
 
+## Tested environment
+
+* FreeBSD 10.2-PRERELEASE amd64 r286356
+* Enabling rndtest(4) strongly recommended
+
 ## How this works
 
 The driver in `trng.c` works as `/dev/trng`, and accepts up to 1024-byte write
@@ -47,6 +52,7 @@ introduced.*
 
 ## Version
 
+* 11-AUG-2015: 0.1.1 (feedtrng revised to accept device name)
 * 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
 * 4-AUG-2015: 0.0.5 (fix trng dev code)
 * 30-JUL-2015: 0.0.4 (fix on code)
@@ -57,10 +63,16 @@ introduced.*
 
     make clean all
     # run following as a superuser
+    # /dev/trng has the owner uucp:dialer and permission 0660 as default
     kldload ./trng.ko
-    # give necessary access permission to /dev/trng
-    chown uucp:dialer /dev/trng
-    chmod 660 /dev/trng
+
+## How to run feedtrng
+
+    # /dev/[device] will be accepted
+    feedtrng -d /dev/cuaU0
+    # only the basename(3) part is used and attached to `/dev/` directly
+    # so this is also OK
+    feedtrng -d cuaU0
 
 ## stty settings required for raw mode
 
