@@ -43,9 +43,8 @@
 #define CMDNAME "feedtrng"
 
 void usage(void) {
-    fprintf(stderr, "Usage: %s -d pathname\n", CMDNAME);
-    fprintf(stderr, "(Only the basename part is used)\n");
-    fprintf(stderr, "(The device name = /dev/[basename])\n");
+    fprintf(stderr, "Usage: %s -d cua-device\n", CMDNAME);
+    fprintf(stderr, "Only cua[.+] are /dev/cua[.+] are accepted\n");
     fprintf(stderr, "Usage: %s -h for help\n", CMDNAME);
     exit (-1);
 }
@@ -110,6 +109,16 @@ int main(int argc, char *argv[]) {
     }
     if (dflag == 0) {
         printerror("no device name given");
+        exit(-1);
+    }
+    if (strnlen(inputbase, 4) < 4) {
+        printerror("input basename less than four letters");
+        exit(-1);
+    }
+    if ((inputbase[0] != 'c') ||
+        (inputbase[1] != 'u') ||
+        (inputbase[2] != 'a')) {
+        printerror("not a /dev/cua* device");
         exit(-1);
     }
     if ((strlcpy(devname, "/dev/", MAXPATHLEN)) >= MAXPATHLEN) {
