@@ -34,6 +34,30 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <time.h>
+#include <libgen.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/param.h>
+#include <errno.h>
+
+#define CMDNAME "feedtrng"
+
+void usage(void) {
+    fprintf(stderr, "Usage: %s -d pathname\n", CMDNAME);
+    fprintf(stderr, "(Only the basename part is used)\n");
+    fprintf(stderr, "(The device name = /dev/[basename])\n");
+    fprintf(stderr, "Usage: %s -h for help\n", CMDNAME);
+    exit (-1);
+}
+
+void printerror(const char *p) {
+
+    fprintf(stderr, "%s: %s", CMDNAME, p);
+    if (errno > 0) {
+        fprintf(stderr, ": %s", strerror(errno));
+    }
+    putc('\n', stderr);
+}
 
 /* 
  * buffer size
@@ -50,15 +74,65 @@ int main(int argc, char *argv[]) {
     int ttyfd, trngfd;
     ssize_t rsize, wsize;
     int i;
+    int dflag = 0;
+    int ch;
+    char *input;
+    char inputbase[MAXPATHLEN];
+    char devname[MAXPATHLEN];
 
+    if (argc < 2) {
+        usage();
+    }
+    while ((ch = getopt(argc, argv, "d:h")) != -1) {
+        switch (ch) {
+        case 'd':
+            dflag = 1;
+            if ((input = strndup(optarg, MAXPATHLEN)) == NULL) {
+                printerror("device input string error");
+                exit(-1);
+            }
+            if (NULL == basename_r(input, inputbase)) {
+                printerror("device input basename_r failed");
+                exit(-1);
+            }
+            if ((*inputbase == '/') || (*inputbase == '.')) {
+                printerror("illegal path in inputbase");
+                exit(-1);
+            }
+            break;
+        case 'h':
+            usage();
+            break;
+        case '?':
+        default:
+            usage();
+        }
+    }
+    if (dflag == 0) {
+        printerror("no device name given");
+        exit(-1);
+    }
+    if ((strlcpy(devname, "/dev/", MAXPATHLEN)) >= MAXPATHLEN) {
+        printerror("strlcpy devname failed");
+        exit(-1);
+    }
+    if ((strlcat(devname, inputbase, MAXPATHLEN)) >= MAXPATHLEN) {
+        printerror("strlcat devname failed");
+        exit(-1);
+    }
+#ifdef DEBUG
+    fprintf(stderr,
+        "feedtrng: device name: %s\n",
+        devname);
+#endif
     /* open TRNG tty */
-    if ((ttyfd = open("/dev/cuaU0", O_RDONLY)) == -1) {
-        perror("feedtrng: cannot open tty");
+    if ((ttyfd = open(devname, O_RDONLY)) == -1) {
+        printerror("cannot open tty");
         exit(-1);
     }
     /* open trng device */
     if ((trngfd = open("/dev/trng", O_WRONLY)) == -1) {
-        perror("feedtrng: cannot open trng");
+        printerror("cannot open trng");
         exit(-1);
     }
 
@@ -69,7 +143,7 @@ int main(int argc, char *argv[]) {
             /* try reading from tty */
             if ((rsize = read(ttyfd, p + i,
                             BUFFERSIZE - i)) == -1) {
-                perror("feedtrng: read from tty failed");
+                printerror("read from tty failed");
                 exit(-1);
             }
 #ifdef DEBUG
@@ -87,7 +161,7 @@ int main(int argc, char *argv[]) {
         }
         if ((wsize = write(trngfd, rbuf,
                        (size_t)BUFFERSIZE)) == -1) {
-            perror("feedtrng: trng write failed");
+            printerror("trng write failed");
             exit(-1);
         }
 #ifdef DEBUG
@@ -98,4 +172,3 @@ int main(int argc, char *argv[]) {
     /* notreached */
     return 0;
 }
-    
