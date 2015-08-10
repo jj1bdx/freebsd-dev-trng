@@ -39,23 +39,14 @@
 #include <unistd.h>
 #include <sys/param.h>
 #include <errno.h>
-
-#define CMDNAME "feedtrng"
+#include <err.h>
+#include <sysexits.h>
 
 void usage(void) {
-    fprintf(stderr, "Usage: %s -d cua-device\n", CMDNAME);
-    fprintf(stderr, "Only cua[.+] and /dev/cua[.+] are accepted\n");
-    fprintf(stderr, "Usage: %s -h for help\n", CMDNAME);
-    exit (-1);
-}
-
-void printerror(const char *p) {
-
-    fprintf(stderr, "%s: %s", CMDNAME, p);
-    if (errno > 0) {
-        fprintf(stderr, ": %s", strerror(errno));
-    }
-    putc('\n', stderr);
+    errx(EX_USAGE,
+        "Usage: %s [-d cua-device] [-h]\n"
+        "(Only cua[.+] and /dev/cua[.+] are accepted)\n"
+        "Use -h for help", getprogname());
 }
 
 /* 
@@ -87,16 +78,13 @@ int main(int argc, char *argv[]) {
         case 'd':
             dflag = 1;
             if ((input = strndup(optarg, MAXPATHLEN)) == NULL) {
-                printerror("device input string error");
-                exit(-1);
+                errx(EX_USAGE, "device input string error");
             }
             if (NULL == basename_r(input, inputbase)) {
-                printerror("device input basename_r failed");
-                exit(-1);
+                errx(EX_OSERR, "device input basename_r failed");
             }
             if ((*inputbase == '/') || (*inputbase == '.')) {
-                printerror("illegal path in inputbase");
-                exit(-1);
+                errx(EX_USAGE, "illegal path in inputbase");
             }
             break;
         case 'h':
@@ -108,26 +96,21 @@ int main(int argc, char *argv[]) {
         }
     }
     if (dflag == 0) {
-        printerror("no device name given");
-        exit(-1);
+        errx(EX_USAGE, "no device name given");
     }
     if (strnlen(inputbase, 4) < 4) {
-        printerror("input basename less than four letters");
-        exit(-1);
+        errx(EX_USAGE, "input basename less than four letters");
     }
     if ((inputbase[0] != 'c') ||
         (inputbase[1] != 'u') ||
         (inputbase[2] != 'a')) {
-        printerror("not a /dev/cua* device");
-        exit(-1);
+        errx(EX_USAGE, "not a /dev/cua* device");
     }
     if ((strlcpy(devname, "/dev/", MAXPATHLEN)) >= MAXPATHLEN) {
-        printerror("strlcpy devname failed");
-        exit(-1);
+        errx(EX_OSERR, "strlcpy devname failed");
     }
     if ((strlcat(devname, inputbase, MAXPATHLEN)) >= MAXPATHLEN) {
-        printerror("strlcat devname failed");
-        exit(-1);
+        errx(EX_OSERR, "strlcat devname failed");
     }
 #ifdef DEBUG
     fprintf(stderr,
@@ -136,13 +119,11 @@ int main(int argc, char *argv[]) {
 #endif
     /* open TRNG tty */
     if ((ttyfd = open(devname, O_RDONLY)) == -1) {
-        printerror("cannot open tty");
-        exit(-1);
+        err(EX_IOERR, "cannot open tty");
     }
     /* open trng device */
     if ((trngfd = open("/dev/trng", O_WRONLY)) == -1) {
-        printerror("cannot open trng");
-        exit(-1);
+        err(EX_IOERR, "cannot open trng");
     }
 
     /* infinite loop */
@@ -152,8 +133,7 @@ int main(int argc, char *argv[]) {
             /* try reading from tty */
             if ((rsize = read(ttyfd, p + i,
                             BUFFERSIZE - i)) == -1) {
-                printerror("read from tty failed");
-                exit(-1);
+                err(EX_IOERR, "read from tty failed");
             }
 #ifdef DEBUG
             fprintf(stderr,
@@ -170,8 +150,7 @@ int main(int argc, char *argv[]) {
         }
         if ((wsize = write(trngfd, rbuf,
                        (size_t)BUFFERSIZE)) == -1) {
-            printerror("trng write failed");
-            exit(-1);
+            err(EX_IOERR, "trng write failed");
         }
 #ifdef DEBUG
         fprintf(stderr, "feedtrng: write %d bytes\n",
