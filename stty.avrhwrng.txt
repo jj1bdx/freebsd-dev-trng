@@ -1,7 +1,0 @@
-# result of `stty -f /dev/cuaU0`
-# (use `stty -f /dev/cuaU0.init speed 115200 clocal raw` to configure)
-speed 115200 baud;
-lflags: -icanon -isig -iexten -echo
-iflags: -icrnl -ixon -imaxbel ignbrk -brkint
-oflags: -opost tab0
-cflags: cs8 -parenb clocal

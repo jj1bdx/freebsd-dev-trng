@@ -1,4 +1,0 @@
-#!/bin/sh
-kldload ./trng.ko
-chown uucp:dialer /dev/trng
-chmod 660 /dev/trng
