@@ -19,17 +19,18 @@ data to the device driver /dev/trng may degrade the quality of /dev/random,
 ## Tested environment
 
 * FreeBSD 10.2-PRERELEASE amd64 r286356
-* Enabling rndtest(4) strongly recommended
 
 ## How this works
 
 The driver in `trng.c` works as `/dev/trng`, and accepts up to 1024-byte write
 operation to feed the written data as an entropy string by calling
-random\_harvest(9) multiple times. 16 bytes are passed for each time when
-random\_harvest(9) is called. 
+random\_harvest(9) (or rndtest\_harvest() defined in rndtest(4)) multiple
+times. 16 bytes are passed for each time when the harvesting function is
+called. 
 
 `feedtrng.c` is a C code example to transfer TRNG data from a tty device to
-`/dev/trng`.
+`/dev/trng`. The code sets input tty disciplines and lock the tty, then feed
+the contents to `/dev/trng`.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
 
@@ -45,14 +46,22 @@ Currently, the random bits in the given entropy strings are estimated as 1/2 of
 the given bits, which is a common practice for accepting TRNG sequences in the
 FreeBSD crypto device drivers.
 
-The entropy source is currently indicated as `RANDOM_NET_ETHER`. Set `sysctl
-kern.random.sys.harvest.ethernet=1` to enable harvesting from the Ethernet
-traffic. See random(4) for the details. *TODO: an entirely new class should be
-introduced.*
+# rndtest(4) strongly recommended
+
+Compiling rndtest(4) in the kernel is strongly recommended to ensure the
+quality of feeding. The compilation option `-DRNDTEST` in `Makefile.trngdev` is
+set as default.
+
+When rndtest(4) is not in use, the entropy source is currently indicated as
+`RANDOM_NET_ETHER`. Set `sysctl kern.random.sys.harvest.ethernet=1` to enable
+harvesting from the Ethernet traffic. See random(4) for the details. 
+
+See `rndtest_usage.md` for the rndtest(4) API details.
 
 ## Version
 
-* 11-AUG-2015: 0.1.1 (feedtrng revised to accept `/dev/cua*` device name)
+* 12-AUG-2015: 0.2.0 (Revise feedtrng to set tty line disciplines, exclusive access)
+* 11-AUG-2015: 0.1.1 (Revise feedtrng to accept `/dev/cua*` device name)
 * 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
 * 4-AUG-2015: 0.0.5 (fix trng dev code)
 * 30-JUL-2015: 0.0.4 (fix on code)
@@ -73,16 +82,10 @@ introduced.*
     # only the basename(3) part is used and attached to `/dev/` directly
     # so this is also OK
     feedtrng -d cuaU0
-
-## stty settings required for raw mode
-
-    # result of `stty -f /dev/cuaU0`
-    # (use `stty -f /dev/cuaU0.init speed 115200 clocal raw` to configure)
-    speed 115200 baud;
-    lflags: -icanon -isig -iexten -echo
-    iflags: -icrnl -ixon -imaxbel ignbrk -brkint
-    oflags: -opost tab0
-    cflags: cs8 -parenb clocal
+    # tty speed [bps] can be set (9600 ~ 1000000, default 115200)
+    feedtrng -d cuaU1 -s 9600
+    # for usage
+    feedtrng -h
 
 ## License
 
