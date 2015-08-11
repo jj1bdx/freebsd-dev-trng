@@ -144,18 +144,10 @@ int main(int argc, char *argv[]) {
     if (-1 == ioctl(ttyfd, TIOCEXCL, 0)) {
         err(EX_IOERR, "input ioctl(TIOCEXCL) failed");
     }
-    /* set clocal mode (no modem) */
-    if (-1 == tcgetattr(ttyfd, &ttyconfig)) {
-        err(EX_IOERR, "input tcgetattr failed");
-    }
-    if (-1 == cfsetspeed(&ttyconfig, B0)) {
-        err(EX_IOERR, "input cfsetspeed to B0 failed");
-    }
-    if (-1 == tcsetattr(ttyfd, TCSANOW, &ttyconfig)) {
-        err(EX_IOERR, "input tcsetattr for clocal failed");
-    }
     /* set RAW mode */
     cfmakeraw(&ttyconfig);
+    /* set CLOCAL */
+    ttyconfig.c_cflag |= CLOCAL;
     /* set speed */
     if (-1 == cfsetspeed(&ttyconfig, (speed_t)speedval)) {
         err(EX_IOERR, "input cfsetspeed to %ld failed", speedval);
