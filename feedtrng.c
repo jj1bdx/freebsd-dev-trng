@@ -41,11 +41,14 @@
 #include <errno.h>
 #include <err.h>
 #include <sysexits.h>
+#include <termios.h>
+#include <limits.h>
 
 void usage(void) {
     errx(EX_USAGE,
-        "Usage: %s [-d cua-device] [-h]\n"
-        "(Only cua[.+] and /dev/cua[.+] are accepted)\n"
+        "Usage: %s [-d cua-device] [-s speed] [-h]\n"
+        "Only cua[.+] and /dev/cua[.+] are accepted\n"
+        "Speed range: 9600 to 1000000 [bps] (default: 115200)\n"
         "Use -h for help", getprogname());
 }
 
@@ -62,6 +65,7 @@ int main(int argc, char *argv[]) {
 
     uint8_t rbuf[BUFFERSIZE], *p;
     int ttyfd, trngfd;
+    struct termios ttyconfig;
     ssize_t rsize, wsize;
     int i;
     int dflag = 0;
@@ -69,11 +73,12 @@ int main(int argc, char *argv[]) {
     char *input;
     char inputbase[MAXPATHLEN];
     char devname[MAXPATHLEN];
+    long speedval = 115200L;
 
     if (argc < 2) {
         usage();
     }
-    while ((ch = getopt(argc, argv, "d:h")) != -1) {
+    while ((ch = getopt(argc, argv, "d:s:h")) != -1) {
         switch (ch) {
         case 'd':
             dflag = 1;
@@ -85,6 +90,16 @@ int main(int argc, char *argv[]) {
             }
             if ((*inputbase == '/') || (*inputbase == '.')) {
                 errx(EX_USAGE, "illegal path in inputbase");
+            }
+            break;
+        case 's':
+            errno = 0;
+            speedval = strtol(optarg, NULL, 10);
+            if (errno > 0) {
+                err(EX_OSERR, "strtol for speedval failed");
+            }
+            if ((speedval < 9600) || (speedval > 1000000)) {
+                errx(EX_USAGE, "speedval %ld out of range", speedval);
             }
             break;
         case 'h':
@@ -119,11 +134,36 @@ int main(int argc, char *argv[]) {
 #endif
     /* open TRNG tty */
     if ((ttyfd = open(devname, O_RDONLY)) == -1) {
-        err(EX_IOERR, "cannot open tty");
+        err(EX_IOERR, "cannot open tty file");
     }
+    /* check if really a tty */
+    if (0 == isatty(ttyfd)) {
+        err(EX_IOERR, "input not a tty");
+    }
+    /* set clocal mode (no modem) */
+    if (-1 == tcgetattr(ttyfd, &ttyconfig)) {
+        err(EX_IOERR, "input tcgetattr failed");
+    }
+    if (-1 == cfsetspeed(&ttyconfig, B0)) {
+        err(EX_IOERR, "input cfsetspeed to B0 failed");
+    }
+    if (-1 == tcsetattr(ttyfd, TCSANOW, &ttyconfig)) {
+        err(EX_IOERR, "input tcsetattr for clocal failed");
+    }
+    /* set RAW mode */
+    cfmakeraw(&ttyconfig);
+    /* set speed */
+    if (-1 == cfsetspeed(&ttyconfig, (speed_t)speedval)) {
+        err(EX_IOERR, "input cfsetspeed to %ld failed", speedval);
+    }
+    if (-1 == tcsetattr(ttyfd, TCSANOW, &ttyconfig)) {
+        err(EX_IOERR,
+            "input tcsetattr for raw and speed %ld failed", speedval);
+    }
+
     /* open trng device */
     if ((trngfd = open("/dev/trng", O_WRONLY)) == -1) {
-        err(EX_IOERR, "cannot open trng");
+        err(EX_IOERR, "cannot open /dev/trng");
     }
 
     /* infinite loop */
