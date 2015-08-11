@@ -60,6 +60,7 @@ See `rndtest_usage.md` for the rndtest(4) API details.
 
 ## Version
 
+* 12-AUG-2015: 0.2.1 (fix feedtrng tcsetattr bug)
 * 12-AUG-2015: 0.2.0 (Revise feedtrng to set tty line disciplines, exclusive access)
 * 11-AUG-2015: 0.1.1 (Revise feedtrng to accept `/dev/cua*` device name)
 * 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
@@ -86,6 +87,15 @@ See `rndtest_usage.md` for the rndtest(4) API details.
     feedtrng -d cuaU1 -s 9600
     # for usage
     feedtrng -h
+
+## tty discipline of the input tty
+
+    # result of `sudo stty -f /dev/cuaU0` (sudo needed to override TIOCEXCL)
+    speed 115200 baud;
+    lflags: -icanon -isig -iexten -echo
+    iflags: -icrnl -ixon -imaxbel ignbrk -brkint
+    oflags: -opost tab0
+    cflags: cs8 -parenb clocal
 
 ## License
 
