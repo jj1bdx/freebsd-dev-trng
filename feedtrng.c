@@ -28,22 +28,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <time.h>
-#include <libgen.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/param.h>
-#include <errno.h>
 #include <err.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <libgen.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/types.h>
 #include <sysexits.h>
 #include <termios.h>
-#include <limits.h>
-#include <sys/ioctl.h>
+#include <time.h>
+#include <unistd.h>
 
 void usage(void) {
     errx(EX_USAGE,
