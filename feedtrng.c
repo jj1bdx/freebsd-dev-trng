@@ -43,6 +43,7 @@
 #include <sysexits.h>
 #include <termios.h>
 #include <limits.h>
+#include <sys/ioctl.h>
 
 void usage(void) {
     errx(EX_USAGE,
@@ -139,6 +140,10 @@ int main(int argc, char *argv[]) {
     /* check if really a tty */
     if (0 == isatty(ttyfd)) {
         err(EX_IOERR, "input not a tty");
+    }
+    /* set exclusive access */
+    if (-1 == ioctl(ttyfd, TIOCEXCL, 0)) {
+        err(EX_IOERR, "input ioctl(TIOCEXCL) failed");
     }
     /* set clocal mode (no modem) */
     if (-1 == tcgetattr(ttyfd, &ttyconfig)) {
