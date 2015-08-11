@@ -144,10 +144,26 @@ int main(int argc, char *argv[]) {
     if (-1 == ioctl(ttyfd, TIOCEXCL, 0)) {
         err(EX_IOERR, "input ioctl(TIOCEXCL) failed");
     }
-    /* set RAW mode */
-    cfmakeraw(&ttyconfig);
-    /* set CLOCAL */
-    ttyconfig.c_cflag |= CLOCAL;
+    /* get tty discipline */
+    if (-1 == tcgetattr(ttyfd, &ttyconfig)) {
+        err(EX_IOERR, "input tcgetattr failed");
+    }
+    /* set RAW mode (see cfmakeraw(4)) */
+    /* and set all transparency flags */
+    /* no CTS/RTS flow control, CLOCAL enabled */
+    ttyconfig.c_iflag &=
+        ~(IMAXBEL|IXOFF|INPCK|BRKINT|PARMRK|
+                ISTRIP|INLCR|IGNCR|ICRNL|IXON|IGNPAR);
+    ttyconfig.c_iflag |= IGNBRK;
+    ttyconfig.c_oflag &= ~OPOST;
+    ttyconfig.c_lflag &=
+        ~(ECHO|ECHOE|ECHOK|ECHOKE|ECHOCTL|
+                ECHONL|ICANON|ISIG|IEXTEN|NOFLSH|TOSTOP|PENDIN);
+    ttyconfig.c_cflag &=
+        ~(CSIZE|PARENB|CRTS_IFLOW|CCTS_OFLOW|MDMBUF);
+    ttyconfig.c_cflag |= CS8|CREAD|CLOCAL;
+    ttyconfig.c_cc[VMIN] = 1;
+    ttyconfig.c_cc[VTIME] = 0;
     /* set speed */
     if (-1 == cfsetspeed(&ttyconfig, (speed_t)speedval)) {
         err(EX_IOERR, "input cfsetspeed to %ld failed", speedval);
