@@ -60,14 +60,15 @@ See `rndtest_usage.md` for the rndtest(4) API details.
 
 ## Version
 
+* 13-AUG-2015: 0.2.2 (Add feedtrng `-o` option for redirecting output to stdout)
 * 12-AUG-2015: 0.2.1 (fix feedtrng tcsetattr bug)
 * 12-AUG-2015: 0.2.0 (Revise feedtrng to set tty line disciplines, exclusive access)
 * 11-AUG-2015: 0.1.1 (Revise feedtrng to accept `/dev/cua*` device name)
-* 6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
-* 4-AUG-2015: 0.0.5 (fix trng dev code)
-* 30-JUL-2015: 0.0.4 (fix on code)
-* 29-JUL-2015: 0.0.3 (fix feedtrng code)
-* 28-JUL-2015: 0.0.1 (initial release)
+*  6-AUG-2015: 0.1.0 (Use Newbus driver, enable rndtest driver hook)
+*  4-AUG-2015: 0.0.5 (Fix trng dev code)
+* 30-JUL-2015: 0.0.4 (Fix on code)
+* 29-JUL-2015: 0.0.3 (Fix feedtrng code)
+* 28-JUL-2015: 0.0.1 (Initial release)
 
 ## How to compile and load /dev/trng
 
