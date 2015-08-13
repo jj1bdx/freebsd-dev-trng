@@ -44,12 +44,15 @@
 #include <time.h>
 #include <unistd.h>
 
+#define OUTPUTFILE "/dev/trng"
+
 void usage(void) {
     errx(EX_USAGE,
-        "Usage: %s [-d cua-device] [-s speed] [-h]\n"
+        "Usage: %s [-d cua-device] [-s speed] [-o] [-h]\n"
         "Only cua[.+] and /dev/cua[.+] are accepted\n"
         "Speed range: 9600 to 1000000 [bps] (default: 115200)\n"
-        "Use -h for help", getprogname());
+        "Default output device: %s (use -o to output to stdout)\n"
+        "Use -h for help", getprogname(), OUTPUTFILE);
 }
 
 /* 
@@ -74,11 +77,12 @@ int main(int argc, char *argv[]) {
     char inputbase[MAXPATHLEN];
     char devname[MAXPATHLEN];
     long speedval = 115200L;
+    int oflag = 0;
 
     if (argc < 2) {
         usage();
     }
-    while ((ch = getopt(argc, argv, "d:s:h")) != -1) {
+    while ((ch = getopt(argc, argv, "d:s:oh")) != -1) {
         switch (ch) {
         case 'd':
             dflag = 1;
@@ -101,6 +105,9 @@ int main(int argc, char *argv[]) {
             if ((speedval < 9600) || (speedval > 1000000)) {
                 errx(EX_USAGE, "speedval %ld out of range", speedval);
             }
+            break;
+        case 'o':
+            oflag = 1;
             break;
         case 'h':
             usage();
@@ -173,9 +180,17 @@ int main(int argc, char *argv[]) {
             "input tcsetattr for raw and speed %ld failed", speedval);
     }
 
-    /* open trng device */
-    if ((trngfd = open("/dev/trng", O_WRONLY)) == -1) {
-        err(EX_IOERR, "cannot open /dev/trng");
+    /* open trng output device */
+    if (oflag) {
+        /* use stdout */
+        if ((trngfd = fcntl(STDOUT_FILENO, F_DUPFD, 0)) == -1) {
+            err(EX_IOERR, "cannot open stdout");
+        }
+    } else {
+        /* use default output file */
+        if ((trngfd = open(OUTPUTFILE, O_WRONLY)) == -1) {
+            errx(EX_IOERR, "cannot open %s", OUTPUTFILE);
+        }
     }
 
     /* infinite loop */
