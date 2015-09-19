@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
         for (i = 0, p = rbuf; i < BUFFERSIZE; ) {
             /* try reading from tty */
             if ((rsize = read(ttyfd, p + i,
-                            BUFFERSIZE - i)) == -1) {
+                            BUFFERSIZE - i)) < 1) {
                 err(EX_IOERR, "read from tty failed");
             }
 #ifdef DEBUG
