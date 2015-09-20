@@ -1,3 +1,4 @@
+DESTDIR=	/usr/local/bin
 PROG=	feedtrng
 SRCS=	feedtrng.c
 MAN=

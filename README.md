@@ -18,7 +18,7 @@ data to the device driver /dev/trng may degrade the quality of /dev/random,
 
 ## Tested environment
 
-* FreeBSD 10.2-PRERELEASE amd64 r286356
+* FreeBSD amd64 10.2-STABLE r287899
 
 ## How this works
 
@@ -35,6 +35,7 @@ the contents to `/dev/trng`.
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
 
 * [NeuG](http://www.gniibe.org/memo/development/gnuk/rng/neug.html), claiming ~80kbytes/sec generation speed
+* [OneRNG](http://onerng.info), claiming ~44kbytes/sec generation speed
 * [TrueRNG 2](https://www.tindie.com/products/ubldit/truerng-hardware-random-number-generator/), claiming ~43.5kbytes/sec generation speed
 
 The following TRNG is slow (~2kbytes/sec), but may work well (disclaimer: Kenji
@@ -56,10 +57,9 @@ When rndtest(4) is not in use, the entropy source is currently indicated as
 `RANDOM_NET_ETHER`. Set `sysctl kern.random.sys.harvest.ethernet=1` to enable
 harvesting from the Ethernet traffic. See random(4) for the details. 
 
-See `rndtest_usage.md` for the rndtest(4) API details.
-
 ## Version
 
+* 20-SEP-2015: 0.3.0 (Installation simplified, Makefiles streamlined)
 * 19-SEP-2015: 0.2.3 (Fix feedtrng tty read(2) bug)
 * 13-AUG-2015: 0.2.2 (Add feedtrng `-o` option for redirecting output to stdout)
 * 12-AUG-2015: 0.2.1 (Fix feedtrng tcsetattr bug)
@@ -75,8 +75,11 @@ See `rndtest_usage.md` for the rndtest(4) API details.
 
     make clean all
     # run following as a superuser
+    # trng.ko will be added to /boot/modules/
+    # feedtrng will be added to /usr/local/bin/
+    make install
     # /dev/trng has the owner uucp:dialer and permission 0660 as default
-    kldload ./trng.ko
+    kldload trng.ko
 
 ## How to run feedtrng
 
@@ -102,6 +105,43 @@ See `rndtest_usage.md` for the rndtest(4) API details.
 ## License
 
 BSD 2-clause. See LICENSE.
+
+## rndtest(4) functions and the usage
+
+rndtest(4) is a pseudo device driver for accepting True Random Number
+Generator (TRNG) *after* testing the stochastic property of the RNG data
+stream.  The data passed the test are handed over to random_harvest(9)
+with the class `RANDOM_PURE_RNDTEST`.
+
+rndtest(4) provides the following three functions in the header file `<dev/rndtent/rndtest.h>`:
+
+* `rndtest_attach()`: allocating a set of rndtest(4) resource for a given
+  device of Newbus.
+* `rndtest_detach()`: deallocating a set of resource assigned by
+  `rndtest_attach()`.
+* `rndtest_harvest()`: Accepting a data string of given length to the
+  stochactic property test, then hand over the string which passes the
+  test to `random_harvest(9)`.
+
+Usage examples of rndtest(4) functions are found in the source code of
+security hardware device drivers, such as hifn(4) and safe(4). Here are
+some things to consider:
+
+* The parent device *must* be a Newbus driver since rndtest(4) uses the
+  parent driver's notification mechanism. For a "real" I/O driver this
+  won't be a big problem, but for a "pseudo" driver, the programmer must
+  decide which bus to attach.  For trng, `nexus` is the current choice,
+  because it doesn't have any physical device to initialize.
+
+* `BUS_ADD_CHILD()` *must be run only once* when running the
+  `device_identify` method. If the same name of child found by
+  `device_find_child()`, the device is already added, so do not add a
+  new one. Mishandling this may cause the system crash and reboot.
+
+* `rndtest_attach()` may fail, and in case of the failure,
+  `random_harvest()` must be used instead of `rndtest_harvest()`. Using
+  a function pointer, which is found in safe(4), hifn(4), and also in
+  trng, will make this process easier.
 
 ## References
 

@@ -1,11 +1,3 @@
-all: trngdev feedtrng
+SUBDIR=	trng feedtrng
 
-clean:
-	make -f Makefile.trngdev clean
-	make -f Makefile.feedtrng clean
-
-trngdev:
-	make -f Makefile.trngdev
-
-feedtrng:
-	make -f Makefile.feedtrng
+.include <bsd.subdir.mk>
