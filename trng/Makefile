@@ -3,6 +3,7 @@
 KMOD    =  trng
 SRCS    =  trng.c
 SRCS    += device_if.h bus_if.h
+KMODDIR	=	/boot/modules
 
 #CFLAGS  += -DDEBUG -g
 CFLAGS	+= -DRNDTEST
