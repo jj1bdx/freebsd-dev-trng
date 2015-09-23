@@ -59,6 +59,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 23-SEP-2015: 0.3.1 (Fix termios; now CLOCAL cleared, modem control enabled)
 * 20-SEP-2015: 0.3.0 (Installation simplified, Makefiles streamlined)
 * 19-SEP-2015: 0.2.3 (Fix feedtrng tty read(2) bug)
 * 13-AUG-2015: 0.2.2 (Add feedtrng `-o` option for redirecting output to stdout)
@@ -100,7 +101,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
     lflags: -icanon -isig -iexten -echo
     iflags: -icrnl -ixon -imaxbel ignbrk -brkint
     oflags: -opost tab0
-    cflags: cs8 -parenb clocal
+    cflags: cs8 -parenb -clocal
 
 ## License
 

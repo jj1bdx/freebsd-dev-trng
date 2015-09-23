@@ -157,7 +157,8 @@ int main(int argc, char *argv[]) {
     }
     /* set RAW mode (see cfmakeraw(4)) */
     /* and set all transparency flags */
-    /* no CTS/RTS flow control, CLOCAL enabled */
+    /* no CTS/RTS flow control */
+    /* CLOCAL cleared (modem control enabled) */
     ttyconfig.c_iflag &=
         ~(IMAXBEL|IXOFF|INPCK|BRKINT|PARMRK|
                 ISTRIP|INLCR|IGNCR|ICRNL|IXON|IGNPAR);
@@ -168,7 +169,8 @@ int main(int argc, char *argv[]) {
                 ECHONL|ICANON|ISIG|IEXTEN|NOFLSH|TOSTOP|PENDIN);
     ttyconfig.c_cflag &=
         ~(CSIZE|PARENB|CRTS_IFLOW|CCTS_OFLOW|MDMBUF);
-    ttyconfig.c_cflag |= CS8|CREAD|CLOCAL;
+    ttyconfig.c_cflag |= CS8|CREAD;
+    ttyconfig.c_cflag &= ~CLOCAL;
     ttyconfig.c_cc[VMIN] = 1;
     ttyconfig.c_cc[VTIME] = 0;
     /* set speed */
