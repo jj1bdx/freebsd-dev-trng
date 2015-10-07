@@ -18,7 +18,7 @@ data to the device driver /dev/trng may degrade the quality of /dev/random,
 
 ## Tested environment
 
-* FreeBSD amd64 10.2-STABLE r287899
+* FreeBSD amd64 10.2-STABLE r288677
 
 ## How this works
 
@@ -30,18 +30,18 @@ called.
 
 `feedtrng.c` is a C code example to transfer TRNG data from a tty device to
 `/dev/trng`. The code sets input tty disciplines and lock the tty, then feed
-the contents to `/dev/trng`.
+the contents to `/dev/trng`. Note: when running in the default mode, the first
+block (512 bytes) from the tty device is *discarded* to prevent unstable data
+of TRNG from being transferred to `/dev/trng`, which results in rndtest(4)
+warnings. This data truncation will not happen when the data is redirected to
+stdout.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
 
+* [avrhwrng](https://github.com/jj1bdx/avrhwrng/), an experimental hardware on Arduino Duemilanove/UNO, claiming ~10kbytes/sec (disclaimer: Kenji Rikitake develops the software and hardware)
 * [NeuG](http://www.gniibe.org/memo/development/gnuk/rng/neug.html), claiming ~80kbytes/sec generation speed
 * [OneRNG](http://onerng.info), claiming ~44kbytes/sec generation speed
 * [TrueRNG 2](https://www.tindie.com/products/ubldit/truerng-hardware-random-number-generator/), claiming ~43.5kbytes/sec generation speed
-
-The following TRNG is slow (~2kbytes/sec), but may work well (disclaimer: Kenji
-Rikitake develops the software and hardware):
-
-* [avrhwrng](https://github.com/jj1bdx/avrhwrng/), an experimental hardware on Arduino Duemilanove/UNO
 
 Currently, the random bits in the given entropy strings are estimated as 1/2 of
 the given bits, which is a common practice for accepting TRNG sequences in the
@@ -59,6 +59,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 7-OCT-2015: 0.3.2 (Make feedtrng to discard the first block from tty)
 * 23-SEP-2015: 0.3.1 (Fix termios; now CLOCAL cleared, modem control enabled)
 * 20-SEP-2015: 0.3.0 (Installation simplified, Makefiles streamlined)
 * 19-SEP-2015: 0.2.3 (Fix feedtrng tty read(2) bug)
