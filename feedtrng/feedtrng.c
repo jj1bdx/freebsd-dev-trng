@@ -47,8 +47,6 @@
 
 #define OUTPUTFILE "/dev/trng"
 
-void sha512_hash(const uint8_t *message, uint32_t len, uint64_t hash[8]);
-
 /*
  * buffer size
  * for fetching from the TRNG tty device
@@ -57,6 +55,10 @@ void sha512_hash(const uint8_t *message, uint32_t len, uint64_t hash[8]);
  */
 
 #define BUFFERSIZE (512)
+
+/* external hash function */
+
+extern void sha512_hash(const uint8_t *message, uint32_t len, uint64_t hash[8]);
 
 void usage(void) {
     errx(EX_USAGE,
@@ -249,7 +251,7 @@ int main(int argc, char *argv[]) {
             if (transparent == 0) {
                 memcpy(hashbuf, rbuf, BUFFERSIZE);
                 /* copy half of hashed output into hashbuf */
-                for (i = 0; i < 3; i++) {
+                for (i = 0; i < 4; i++) {
                     memcpy(hashbuf + BUFFERSIZE + (i * sizeof(uint64_t)),
                            &(hash[i]), sizeof(uint64_t));
                 }
