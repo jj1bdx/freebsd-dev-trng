@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +47,9 @@
 
 #define OUTPUTFILE "/dev/trng"
 
-/* 
+void sha512_hash(const uint8_t *message, uint32_t len, uint64_t hash[8]);
+
+/*
  * buffer size
  * for fetching from the TRNG tty device
  * designed for NeuG (~80kbytes/sec)
@@ -57,11 +60,13 @@
 
 void usage(void) {
     errx(EX_USAGE,
-        "Usage: %s [-d cua-device] [-s speed] [-o] [-h]\n"
+        "Usage: %s [-d cua-device] [-s speed] [-o] [-t] [-h]\n"
         "Only cua[.+] and /dev/cua[.+] are accepted\n"
         "Speed range: 9600 to 1000000 [bps] (default: 115200)\n"
         "Default output device: %s (use -o to output to stdout)\n"
-        "Note: the first %d bytes are discarded when without -o\n"
+        "The first %d bytes from tty input are discarded when without -o\n"
+        "The output will be hashed with SHA512 without -t\n"
+        "(when with -t, output is transparent to tty input)\n"
         "Use -h for help", getprogname(), OUTPUTFILE, BUFFERSIZE);
 }
 
@@ -81,11 +86,16 @@ int main(int argc, char *argv[]) {
     int oflag = 0;
     /* discard the first output buffer block as default */
     int discard = 1;
+    /* if set, no SHA512 compression */
+    int transparent = 0;
+    /* sha512 */
+    uint8_t hashbuf[BUFFERSIZE + (sizeof(uint64_t) * 4)];
+    uint64_t hash[8];
 
     if (argc < 2) {
         usage();
     }
-    while ((ch = getopt(argc, argv, "d:s:oh")) != -1) {
+    while ((ch = getopt(argc, argv, "d:s:oth")) != -1) {
         switch (ch) {
         case 'd':
             dflag = 1;
@@ -113,6 +123,9 @@ int main(int argc, char *argv[]) {
             oflag = 1;
             /* do NOT discard the output buffer block */
             discard = 0;
+            break;
+        case 't':
+            transparent = 1;
             break;
         case 'h':
             usage();
@@ -200,6 +213,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* initialize sha512 hash data */
+    hash[0] = UINT64_C(0x6A09E667F3BCC908);
+    hash[1] = UINT64_C(0xBB67AE8584CAA73B);
+    hash[2] = UINT64_C(0x3C6EF372FE94F82B);
+    hash[3] = UINT64_C(0xA54FF53A5F1D36F1);
+    hash[4] = UINT64_C(0x510E527FADE682D1);
+    hash[5] = UINT64_C(0x9B05688C2B3E6C1F);
+    hash[6] = UINT64_C(0x1F83D9ABFB41BD6B);
+    hash[7] = UINT64_C(0x5BE0CD19137E2179);
+
     /* infinite loop */
     while (1) {
         /* fill the receive buffer first */
@@ -223,18 +246,40 @@ int main(int argc, char *argv[]) {
 #endif
         }
         if (discard == 0) {
-            if ((wsize = write(trngfd, rbuf,
-                         (size_t)BUFFERSIZE)) == -1) {
-                err(EX_IOERR, "trng write failed");
+            if (transparent == 0) {
+                memcpy(hashbuf, rbuf, BUFFERSIZE);
+                /* copy half of hashed output into hashbuf */
+                for (i = 0; i < 3; i++) {
+                    memcpy(hashbuf + BUFFERSIZE + (i * sizeof(uint64_t)),
+                           &(hash[i]), sizeof(uint64_t));
+                }
+                sha512_hash(hashbuf, sizeof(hashbuf), hash);
+                /* write hash to output */
+                for (i = 0; i < 8; i++) {
+                    if ((wsize = write(trngfd, &(hash[i]),
+                                sizeof(uint64_t))) == -1) {
+                        err(EX_IOERR, "trng hash write failed");
+                    }
+#ifdef DEBUG
+                    fprintf(stderr, "feedtrng: write %d hashed bytes\n",
+                                    (int)wsize);
+#endif
+                }
+            } else {
+                /* writing transparently */
+                if ((wsize = write(trngfd, rbuf,
+                             (size_t)BUFFERSIZE)) == -1) {
+                    err(EX_IOERR, "trng write failed");
+                }
+#ifdef DEBUG
+                fprintf(stderr, "feedtrng: write %d bytes transparently\n",
+                        (int)wsize);
+#endif
             }
         } else {
             /* clear discarding flag */
             discard = 0;
         }
-#ifdef DEBUG
-        fprintf(stderr, "feedtrng: write %d bytes\n",
-                (int)wsize);
-#endif
     }
     /* notreached */
     return 0;
