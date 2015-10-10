@@ -65,6 +65,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 10-OCT-2015: 0.3.3 (Use SHA512 hash for 1:8 compression as default)
 * 7-OCT-2015: 0.3.2 (Make feedtrng to discard the first block from tty)
 * 23-SEP-2015: 0.3.1 (Fix termios; now CLOCAL cleared, modem control enabled)
 * 20-SEP-2015: 0.3.0 (Installation simplified, Makefiles streamlined)
