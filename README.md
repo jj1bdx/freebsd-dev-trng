@@ -114,6 +114,10 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 BSD 2-clause. See LICENSE.
 
+SHA512 hashing code are from the following page: [Fast SHA-2 hashes in x86
+assembly](http://www.nayuki.io/page/fast-sha2-hashes-in-x86-assembly) by
+Project Nayuki. The related code are distributed under the MIT License.
+
 ## rndtest(4) functions and the usage
 
 rndtest(4) is a pseudo device driver for accepting True Random Number
