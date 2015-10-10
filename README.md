@@ -30,10 +30,16 @@ called.
 
 `feedtrng.c` is a C code example to transfer TRNG data from a tty device to
 `/dev/trng`. The code sets input tty disciplines and lock the tty, then feed
-the contents to `/dev/trng`. Note: when running in the default mode, the first
+the contents to `/dev/trng`. Some things to consider:
+
+* The tty input are sampled as 512-byte blocks. Each block is concatenated to
+64-byte hashed result of SHA512, and again hashed by SHA512, to obtain
+64-byte (512-bit) hashed output. The hashed result is sent to the kernel.
+Compression ratio: 1/8.  This whitening can be disabled by `-t` option.
+* When running in the default mode, the first
 block (512 bytes) from the tty device is *discarded* to prevent unstable data
 of TRNG from being transferred to `/dev/trng`, which results in rndtest(4)
-warnings. This data truncation will not happen when the data is redirected to
+warnings. This data *truncation does not happen* when the data is redirected to
 stdout.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
