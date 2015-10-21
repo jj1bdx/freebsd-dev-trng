@@ -156,6 +156,26 @@ some things to consider:
   a function pointer, which is found in safe(4), hifn(4), and also in
   trng, will make this process easier.
 
+## rndtest(4) sysctl OIDs and values
+
+* `kern.rndtest.retest`: retest interval in seconds
+* `kern.rndtest.verbose`: report to console (test failures only)
+* `kern.rndtest.stats`: rndtest stats of opaque binary values (six `uint32_t` values)
+
+A one-liner shell script to decode `kern.rndtest.stats` (see the details in
+`<dev/rndtest/rndtest.h>`):
+
+```
+sysctl -b kern.rndtest.stats | \
+hexdump -e '6/4 "%12d" "\n"' | \
+awk '{print "rst_discard: " $1; \
+      print "rst_tests: " $2; \
+      print "rst_monobit: " $3; \
+      print "rst_runs: " $4; \
+      print "rst_longruns: " $5; \
+      print "rst_chi: " $6;} '
+```
+
 ## References
 
 * [FreeBSD Architecture Handbook](https://www.freebsd.org/doc/en_US.ISO8859-1/books/arch-handbook/index.html): Section 9.3 <https://www.freebsd.org/doc/en_US.ISO8859-1/books/arch-handbook/driverbasics-char.html>
