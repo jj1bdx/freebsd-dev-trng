@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     /* if set, no SHA512 compression */
     int transparent = 0;
     /* sha512 */
-    uint8_t hashbuf[BUFFERSIZE + (sizeof(uint64_t) * 8)];
+    uint8_t hashbuf[BUFFERSIZE + (sizeof(uint64_t) * 4)];
     uint64_t hash[8];
 
     if (argc < 2) {
@@ -250,8 +250,8 @@ int main(int argc, char *argv[]) {
         if (discard == 0) {
             if (transparent == 0) {
                 memcpy(hashbuf, rbuf, BUFFERSIZE);
-                /* copy hashed output into hashbuf */
-                for (i = 0; i < 8; i++) {
+                /* copy half of hashed output into hashbuf */
+                for (i = 0; i < 4; i++) {
                     memcpy(hashbuf + BUFFERSIZE + (i * sizeof(uint64_t)),
                            &(hash[i]), sizeof(uint64_t));
                 }
