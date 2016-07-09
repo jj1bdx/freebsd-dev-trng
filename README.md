@@ -5,6 +5,10 @@
 This software is still at the *experimental stage*. No guarantee for any damage
 which might be caused by the use of this software. Caveat emptor.
 
+## Note on 11.0
+
+`random_harvest(9)` function has been changed. `random_harvest_queue()` is chosen for 11.0 and later. *Testing required.*
+
 ## What this driver is for
 
 To accomodate True Random Number Generator (TRNG) random bits into FreeBSD
