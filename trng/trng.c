@@ -89,7 +89,11 @@ default_harvest(struct rndtest_state *rsp, void *buf, u_int count)
 {
     /* Caution: treated as a PURE random number sequence */
     /* TODO: must add a new class */
+#if (__FreeBSD_version >= 1100000)
+    random_harvest_queue(buf, count, count * NBBY /2, RANDOM_NET_ETHER);
+#else
     random_harvest(buf, count, count * NBBY /2, RANDOM_NET_ETHER);
+#endif /* __FreeBSD_version */
 }
 
 static void trng_identify(driver_t *driver, device_t parent)
