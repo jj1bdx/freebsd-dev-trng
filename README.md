@@ -5,10 +5,6 @@
 This software is still at the *experimental stage*. No guarantee for any damage
 which might be caused by the use of this software. Caveat emptor.
 
-## Note on 11.0
-
-`random_harvest(9)` function has been changed. `random_harvest_queue()` is chosen for 11.0 and later. *Testing required.*
-
 ## What this driver is for
 
 To accomodate True Random Number Generator (TRNG) random bits into FreeBSD
@@ -22,7 +18,8 @@ data to the device driver /dev/trng may degrade the quality of /dev/random,
 
 ## Tested environment
 
-* FreeBSD amd64 10.2-STABLE r288677
+* FreeBSD amd64 10.3-STABLE r301478
+* FreeBSD amd64 11.0-BETA1 r302499
 
 ## How this works
 
@@ -30,7 +27,7 @@ The driver in `trng.c` works as `/dev/trng`, and accepts up to 1024-byte write
 operation to feed the written data as an entropy string by calling
 random\_harvest(9) (or rndtest\_harvest() defined in rndtest(4)) multiple
 times. 16 bytes are passed for each time when the harvesting function is
-called. 
+called. *Note on 11.0:* random\_harvest(9) function has been changed. `random_harvest_queue()` is chosen for 11.0 and later, as in `rndtest\_harvest()`. *Testing required.*
 
 `feedtrng.c` is a C code example to transfer TRNG data from a tty device to
 `/dev/trng`. The code sets input tty disciplines and lock the tty, then feed
@@ -69,6 +66,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 9-JUL-2016: still 0.3.3, but tentative version for 11.0 testing now effective
 * 10-OCT-2015: 0.3.3 (Use SHA512 hash for 1:8 compression as default)
 * 7-OCT-2015: 0.3.2 (Make feedtrng to discard the first block from tty)
 * 23-SEP-2015: 0.3.1 (Fix termios; now CLOCAL cleared, modem control enabled)
