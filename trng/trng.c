@@ -54,9 +54,6 @@
 #include <sys/malloc.h>
 
 #include <sys/random.h>
-#ifdef RNDTEST
-#include <dev/rndtest/rndtest.h>
-#endif /* RNDTEST */
 
 /* Function prototypes */
 static d_open_t      trng_open;
@@ -78,7 +75,6 @@ struct trng_softc {
     /* for rndtest device */
     struct rndtest_state *rndtest;
     void (*harvest)(struct rndtest_state *, void *, u_int);
-    char *idstring;
 };
 
 
@@ -124,19 +120,7 @@ static int trng_attach(device_t dev)
         "trng");
     if (error == 0) {
         sc->cdev->si_drv1 = sc;
-#ifdef RNDTEST
-        sc->rndtest = rndtest_attach(dev);
-        if (sc->rndtest) {
-            sc->harvest = rndtest_harvest;
-            sc->idstring = "rndtest_harvest";
-        } else {
-            sc->harvest = default_harvest;
-            sc->idstring = "default_harvest";
-        }
-#else /* !RNDTEST */
         sc->harvest = default_harvest;
-        sc->idstring = "default_harvest";
-#endif /* RNDTEST */
     }
     return (error);
 }
@@ -145,11 +129,6 @@ static int trng_detach(device_t dev)
 {
     struct trng_softc *sc = device_get_softc(dev);
 
-#ifdef RNDTEST
-    if (sc->rndtest) {
-        rndtest_detach(sc->rndtest);
-    }
-#endif /* RNDTEST */
     destroy_dev(sc->cdev);
     return (0);
 }
@@ -227,8 +206,7 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
         /* Enter the obtained data into random_harvest(9) */
         (*sc->harvest)(sc->rndtest, buf, amt);
 #ifdef DEBUG
-        printf("trng_write: put %zu bytes to %s\n",
-                amt, sc->idstring);
+        printf("trng_write: put %zu bytes\n", amt);
 #endif /* DEBUG */
     }
     /* normal exit */
@@ -237,6 +215,3 @@ trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 
 /* TODO: is adding to "nexus" ok? */
 DRIVER_MODULE(trng, nexus, trng_driver, trng_devclass, 0, 0);
-#ifdef RNDTEST
-MODULE_DEPEND(trng, rndtest, 1, 1, 1);
-#endif /* RNDTEST */
