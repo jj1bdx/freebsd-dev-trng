@@ -183,5 +183,9 @@ static int trng_write(struct cdev *dev __unused, struct uio *uio,
   return 0;
 }
 
-/* TODO: is adding to "nexus" ok? */
+/* Adding to bus "nexus" looks appropriate */
 DRIVER_MODULE(trng, nexus, trng_driver, trng_devclass, 0, 0);
+/* Dependencies */
+MODULE_DEPEND(trng, random_device, 1, 1, 1);
+/* Module version */
+MODULE_VERSION(trng, 1);
