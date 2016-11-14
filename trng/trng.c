@@ -13,9 +13,10 @@
  * Søren (Xride) Straarup
  * Eitan Adler
  *
- * Code modified as a Newbus driver and rndtest(4) by Kenji Rikitake
+ * Code modified as a Newbus driver and
+ * modification for random_harvest(9) by Kenji Rikitake
  *
- * Copyright (c) 2015 Kenji Rikitake
+ * Copyright (c) 2015-2016 Kenji Rikitake
  * Copyright (c) 2000-2006, 2012-2013 The FreeBSD Documentation Project
  * All rights reserved.
  *
@@ -43,6 +44,8 @@
  *
  */
 
+#include <sys/types.h>
+
 #include <sys/bus.h>
 #include <sys/conf.h>
 #include <sys/kernel.h>
@@ -50,7 +53,6 @@
 #include <sys/module.h>
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 
 #include <sys/random.h>
@@ -72,19 +74,9 @@ static struct cdevsw trng_cdevsw = {
 struct trng_softc {
   device_t device;
   struct cdev *cdev;
-  /* for rndtest device */
-  struct rndtest_state *rndtest;
-  void (*harvest)(struct rndtest_state *, void *, u_int);
 };
 
 static devclass_t trng_devclass;
-
-static void default_harvest(struct rndtest_state *rsp, void *buf, u_int count) {
-  /* 11.x and later only */
-  /* Caution: treated as a PURE random number sequence */
-  /* TODO: must add a new class */
-  random_harvest_fast(buf, count, count * NBBY / 2, RANDOM_NET_ETHER);
-}
 
 static void trng_identify(driver_t *driver, device_t parent) {
   device_t dev;
@@ -109,7 +101,6 @@ static int trng_attach(device_t dev) {
                      &trng_cdevsw, 0, UID_UUCP, GID_DIALER, 0660, "trng");
   if (error == 0) {
     sc->cdev->si_drv1 = sc;
-    sc->harvest = default_harvest;
   }
   return (error);
 }
@@ -180,7 +171,10 @@ static int trng_write(struct cdev *dev __unused, struct uio *uio,
       return error;
     }
     /* Enter the obtained data into random_harvest(9) */
-    (*sc->harvest)(sc->rndtest, buf, amt);
+    /* 11.x and later only */
+    /* Caution: treated as a PURE random number sequence */
+    /* TODO: must add a new class */
+    random_harvest_fast(buf, amt, amt * NBBY / 2, RANDOM_NET_ETHER);
 #ifdef DEBUG
     printf("trng_write: put %zu bytes\n", amt);
 #endif /* DEBUG */
