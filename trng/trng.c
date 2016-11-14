@@ -8,11 +8,11 @@
  * FreeBSD Architecture Handbook, Revision 43184
  *
  * Original authors of Simple Echo pseudo-device KLD:
- * 
+ *
  * Murray Stokely
  * Søren (Xride) Straarup
  * Eitan Adler
- * 
+ *
  * Code modified as a Newbus driver and rndtest(4) by Kenji Rikitake
  *
  * Copyright (c) 2015 Kenji Rikitake
@@ -43,22 +43,22 @@
  *
  */
 
-#include <sys/types.h>
-#include <sys/systm.h>
-#include <sys/param.h>
-#include <sys/kernel.h>
 #include <sys/bus.h>
-#include <sys/module.h>
 #include <sys/conf.h>
-#include <sys/uio.h>
+#include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 
 #include <sys/random.h>
 
 /* Function prototypes */
-static d_open_t      trng_open;
-static d_close_t     trng_close;
-static d_write_t     trng_write;
+static d_open_t trng_open;
+static d_close_t trng_close;
+static d_write_t trng_write;
 
 /* Character device entry points */
 static struct cdevsw trng_cdevsw = {
@@ -70,95 +70,75 @@ static struct cdevsw trng_cdevsw = {
 };
 
 struct trng_softc {
-    device_t device;
-    struct cdev *cdev;
-    /* for rndtest device */
-    struct rndtest_state *rndtest;
-    void (*harvest)(struct rndtest_state *, void *, u_int);
+  device_t device;
+  struct cdev *cdev;
+  /* for rndtest device */
+  struct rndtest_state *rndtest;
+  void (*harvest)(struct rndtest_state *, void *, u_int);
 };
-
 
 static devclass_t trng_devclass;
 
-static void
-default_harvest(struct rndtest_state *rsp, void *buf, u_int count)
-{
-    /* 11.x and later only */
-    /* Caution: treated as a PURE random number sequence */
-    /* TODO: must add a new class */
-    random_harvest_fast(buf, count, count * NBBY /2, RANDOM_NET_ETHER);
+static void default_harvest(struct rndtest_state *rsp, void *buf, u_int count) {
+  /* 11.x and later only */
+  /* Caution: treated as a PURE random number sequence */
+  /* TODO: must add a new class */
+  random_harvest_fast(buf, count, count * NBBY / 2, RANDOM_NET_ETHER);
 }
 
-static void trng_identify(driver_t *driver, device_t parent)
-{
-    device_t dev;
-    dev = device_find_child(parent, "trng", -1);
-    if (!dev) {
-        BUS_ADD_CHILD(parent, 0, "trng", -1);
-    }
+static void trng_identify(driver_t *driver, device_t parent) {
+  device_t dev;
+  dev = device_find_child(parent, "trng", -1);
+  if (!dev) {
+    BUS_ADD_CHILD(parent, 0, "trng", -1);
+  }
 }
 
-static int trng_probe(device_t dev)
-{
-    device_set_desc(dev, "trng");
-    return (BUS_PROBE_SPECIFIC);
+static int trng_probe(device_t dev) {
+  device_set_desc(dev, "trng");
+  return (BUS_PROBE_SPECIFIC);
 }
 
-static int trng_attach(device_t dev)
-{
-    struct trng_softc *sc = device_get_softc(dev);
-    // int unit = device_get_unit(dev);
-    int error = 0;
+static int trng_attach(device_t dev) {
+  struct trng_softc *sc = device_get_softc(dev);
+  // int unit = device_get_unit(dev);
+  int error = 0;
 
-    sc->device = dev;
-    error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK,
-        &(sc->cdev), &trng_cdevsw, 0,
-        UID_UUCP, GID_DIALER, 0660,
-        "trng");
-    if (error == 0) {
-        sc->cdev->si_drv1 = sc;
-        sc->harvest = default_harvest;
-    }
-    return (error);
+  sc->device = dev;
+  error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK, &(sc->cdev),
+                     &trng_cdevsw, 0, UID_UUCP, GID_DIALER, 0660, "trng");
+  if (error == 0) {
+    sc->cdev->si_drv1 = sc;
+    sc->harvest = default_harvest;
+  }
+  return (error);
 }
 
-static int trng_detach(device_t dev)
-{
-    struct trng_softc *sc = device_get_softc(dev);
+static int trng_detach(device_t dev) {
+  struct trng_softc *sc = device_get_softc(dev);
 
-    destroy_dev(sc->cdev);
-    return (0);
+  destroy_dev(sc->cdev);
+  return (0);
 }
 
 static device_method_t trng_methods[] = {
     DEVMETHOD(device_identify, trng_identify),
-    DEVMETHOD(device_probe, trng_probe),
-    DEVMETHOD(device_attach, trng_attach),
-    DEVMETHOD(device_detach, trng_detach),
-    DEVMETHOD_END
-};
+    DEVMETHOD(device_probe, trng_probe), DEVMETHOD(device_attach, trng_attach),
+    DEVMETHOD(device_detach, trng_detach), DEVMETHOD_END};
 
-static driver_t trng_driver = {
-    "trng",
-    trng_methods,
-    sizeof(struct trng_softc)
-};
+static driver_t trng_driver = {"trng", trng_methods, sizeof(struct trng_softc)};
 
-static int
-trng_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
-    struct thread *td __unused)
-{
-    int error = 0;
-    /* really do nothing */
-    return (error);
+static int trng_open(struct cdev *dev __unused, int oflags __unused,
+                     int devtype __unused, struct thread *td __unused) {
+  int error = 0;
+  /* really do nothing */
+  return (error);
 }
 
-static int
-trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
-    struct thread *td __unused)
-{
-    /* really do nothing */
-    return (0);
+static int trng_close(struct cdev *dev __unused, int fflag __unused,
+                      int devtype __unused, struct thread *td __unused) {
+  /* really do nothing */
+  return (0);
 }
 
 /* this buffer size is small */
@@ -173,41 +153,40 @@ trng_close(struct cdev *dev __unused, int fflag __unused, int devtype __unused,
  * feeds the string to random_harvest(9),
  * as the pure random number sequence.
  */
-static int
-trng_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
-{
-    struct trng_softc *sc;
-    size_t amt;
-    int error;
-    uint8_t buf[BUFFERSIZE];
+static int trng_write(struct cdev *dev __unused, struct uio *uio,
+                      int ioflag __unused) {
+  struct trng_softc *sc;
+  size_t amt;
+  int error;
+  uint8_t buf[BUFFERSIZE];
 
-    sc = dev->si_drv1;
+  sc = dev->si_drv1;
 #ifdef DEBUG
-    printf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
+  printf("trng_write: uio->uio_resid: %zd\n", uio->uio_resid);
 #endif /* DEBUG */
-    /* check uio_resid size */
-    if ((uio->uio_resid < 0) || (uio->uio_resid > MAXUIOSIZE)) {
+  /* check uio_resid size */
+  if ((uio->uio_resid < 0) || (uio->uio_resid > MAXUIOSIZE)) {
 #ifdef DEBUG
-        printf("trng_write: invalid uio->uio_resid\n");
+    printf("trng_write: invalid uio->uio_resid\n");
 #endif /* DEBUG */
-        return (EIO);
+    return (EIO);
+  }
+  /* Copy the string to kernel memory */
+  while (uio->uio_resid > 0) {
+    amt = MIN(uio->uio_resid, BUFFERSIZE);
+    error = uiomove(buf, amt, uio);
+    if (error != 0) {
+      /* error exit */
+      return error;
     }
-    /* Copy the string to kernel memory */
-    while (uio->uio_resid > 0) {
-        amt = MIN(uio->uio_resid, BUFFERSIZE);
-        error = uiomove(buf, amt, uio);
-        if (error != 0) {
-            /* error exit */
-            return error;
-        } 
-        /* Enter the obtained data into random_harvest(9) */
-        (*sc->harvest)(sc->rndtest, buf, amt);
+    /* Enter the obtained data into random_harvest(9) */
+    (*sc->harvest)(sc->rndtest, buf, amt);
 #ifdef DEBUG
-        printf("trng_write: put %zu bytes\n", amt);
+    printf("trng_write: put %zu bytes\n", amt);
 #endif /* DEBUG */
-    }
-    /* normal exit */
-    return 0;
+  }
+  /* normal exit */
+  return 0;
 }
 
 /* TODO: is adding to "nexus" ok? */
