@@ -6,6 +6,5 @@ SRCS    += device_if.h bus_if.h
 KMODDIR	=	/boot/modules
 
 #CFLAGS  += -DDEBUG -g
-#CFLAGS	+= -DRNDTEST
 
 .include <bsd.kmod.mk>
