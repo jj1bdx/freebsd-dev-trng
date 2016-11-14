@@ -5,29 +5,27 @@
 This software is still at the *experimental stage*. No guarantee for any damage
 which might be caused by the use of this software. Caveat emptor.
 
-## What this driver is for
-
-To accomodate True Random Number Generator (TRNG) random bits into FreeBSD
-kernel.
-
 ## IMPORTANT SECURITY NOTICE
 
 *Note well: providing incorrect permission and unauthenticated or unscreened
 data to the device driver /dev/trng may degrade the quality of /dev/random,
 /dev/urandom, and the security of the entire FreeBSD operating system.*
 
+## What this driver is for
+
+To accomodate True Random Number Generator (TRNG) random bits into FreeBSD
+kernel.
+
+*Note: this driver is for FreeBSD 11.0 and later only.*
+
 ## Tested environment
 
-* FreeBSD amd64 10.3-STABLE r301478
-* FreeBSD amd64 11.0-BETA1 r302499
+* FreeBSD amd64 11.0-STABLE r308609
 
 ## How this works
 
-The driver in `trng.c` works as `/dev/trng`, and accepts up to 1024-byte write
-operation to feed the written data as an entropy string by calling
-random\_harvest(9) (or rndtest\_harvest() defined in rndtest(4)) multiple
-times. 16 bytes are passed for each time when the harvesting function is
-called. *Note on 11.0:* random\_harvest(9) function has been changed. `random_harvest_queue()` is chosen for 11.0 and later, as in `rndtest_harvest()`. *Load testing ongoing.*
+The driver in `trng.c` works as `/dev/trng`. It accepts up to 1024-byte write
+operation to feed the written data as an entropy string by calling random\_harvest\_fast(9) multiple times. 16 bytes in maximum are passed for each time when the harvesting function is called. 
 
 `feedtrng.c` is a C code example to transfer TRNG data from a tty device to
 `/dev/trng`. The code sets input tty disciplines and lock the tty, then feed
@@ -37,10 +35,7 @@ the contents to `/dev/trng`. Some things to consider:
 64-byte hashed result of SHA512, and again hashed by SHA512, to obtain
 64-byte (512-bit) hashed output. The hashed result is sent to the kernel.
 Compression ratio: 1/8.  This whitening can be disabled by `-t` option.
-* When running in the default mode, the first
-block (512 bytes) from the tty device is *discarded* to prevent unstable data
-of TRNG from being transferred to `/dev/trng`, which results in rndtest(4)
-warnings. This data *truncation does not happen* when the data is redirected to
+* When running in the default mode, the first block (512 bytes) from the tty device is *discarded* to prevent unstable data of TRNG from being transferred to `/dev/trng`. This data *truncation does not happen* when the data is redirected to
 stdout.
 
 The source to write to `/dev/trng` *must* be a real TRNG. Possible candidates are:
@@ -54,18 +49,13 @@ Currently, the random bits in the given entropy strings are estimated as 1/2 of
 the given bits, which is a common practice for accepting TRNG sequences in the
 FreeBSD crypto device drivers.
 
-# rndtest(4) strongly recommended
-
-Compiling rndtest(4) in the kernel is strongly recommended to ensure the
-quality of feeding. The compilation option `-DRNDTEST` in `Makefile.trngdev` is
-set as default.
-
-When rndtest(4) is not in use, the entropy source is currently indicated as
+The entropy source provided by `/dev/trng` is currently indicated as
 `RANDOM_NET_ETHER`. Set `sysctl kern.random.sys.harvest.ethernet=1` to enable
 harvesting from the Ethernet traffic. See random(4) for the details. 
 
 ## Version
 
+* 14-NOV-2016: 0.5.0 (FreeBSD 11 or later only, remove rndtest(4) support)
 * 10-JUL-2016: 0.4.0 (Preliminary fix for FreeBSD 11)
 * 10-OCT-2015: 0.3.3 (Use SHA512 hash for 1:8 compression as default)
 * 7-OCT-2015: 0.3.2 (Make feedtrng to discard the first block from tty)
@@ -117,68 +107,14 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 BSD 2-clause. See LICENSE.
 
-SHA512 hashing code are from the following page: [Fast SHA-2 hashes in x86
-assembly](http://www.nayuki.io/page/fast-sha2-hashes-in-x86-assembly) by
-Project Nayuki. The related code are distributed under the MIT License.
+SHA512 hashing code are from the following page: [Fast SHA-2 hashes in x86 assembly](http://www.nayuki.io/page/fast-sha2-hashes-in-x86-assembly) by Project Nayuki. The related code are distributed under the MIT License.
 
 ## rndtest(4) functions and the usage
 
-rndtest(4) is a pseudo device driver for accepting True Random Number
-Generator (TRNG) *after* testing the stochastic property of the RNG data
-stream.  The data passed the test are handed over to random_harvest(9)
-with the class `RANDOM_PURE_RNDTEST`.
-
-rndtest(4) provides the following three functions in the header file `<dev/rndtent/rndtest.h>`:
-
-* `rndtest_attach()`: allocating a set of rndtest(4) resource for a given
-  device of Newbus.
-* `rndtest_detach()`: deallocating a set of resource assigned by
-  `rndtest_attach()`.
-* `rndtest_harvest()`: Accepting a data string of given length to the
-  stochactic property test, then hand over the string which passes the
-  test to `random_harvest(9)`.
-
-Usage examples of rndtest(4) functions are found in the source code of
-security hardware device drivers, such as hifn(4) and safe(4). Here are
-some things to consider:
-
-* The parent device *must* be a Newbus driver since rndtest(4) uses the
-  parent driver's notification mechanism. For a "real" I/O driver this
-  won't be a big problem, but for a "pseudo" driver, the programmer must
-  decide which bus to attach.  For trng, `nexus` is the current choice,
-  because it doesn't have any physical device to initialize.
-
-* `BUS_ADD_CHILD()` *must be run only once* when running the
-  `device_identify` method. If the same name of child found by
-  `device_find_child()`, the device is already added, so do not add a
-  new one. Mishandling this may cause the system crash and reboot.
-
-* `rndtest_attach()` may fail, and in case of the failure,
-  `random_harvest()` must be used instead of `rndtest_harvest()`. Using
-  a function pointer, which is found in safe(4), hifn(4), and also in
-  trng, will make this process easier.
-
-## rndtest(4) sysctl OIDs and values
-
-* `kern.rndtest.retest`: retest interval in seconds
-* `kern.rndtest.verbose`: report to console (test failures only)
-* `kern.rndtest.stats`: rndtest stats of opaque binary values (six `uint32_t` values)
-
-A one-liner shell script to decode `kern.rndtest.stats` (see the details in
-`<dev/rndtest/rndtest.h>`):
-
-```
-sysctl -b kern.rndtest.stats | \
-hexdump -e '6/4 "%12d" "\n"' | \
-awk '{print "rst_discard: " $1; \
-      print "rst_tests: " $2; \
-      print "rst_monobit: " $3; \
-      print "rst_runs: " $4; \
-      print "rst_longruns: " $5; \
-      print "rst_chi: " $6;} '
-```
+This part is no longer applicable for `/dev/trng`. See `rndtest.md` for the further details.
 
 ## References
 
 * [FreeBSD Architecture Handbook](https://www.freebsd.org/doc/en_US.ISO8859-1/books/arch-handbook/index.html): Section 9.3 <https://www.freebsd.org/doc/en_US.ISO8859-1/books/arch-handbook/driverbasics-char.html>
 * [Writing a kernel module for FreeBSD](http://www.freesoftwaremagazine.com/articles/writing_a_kernel_module_for_freebsd)
+* Joseph Kong, [FreeBSD Device Drivers](https://www.nostarch.com/bsddrivers.htm), No Starch Press, May 2012, ISBN 978-1-59327-204-3
