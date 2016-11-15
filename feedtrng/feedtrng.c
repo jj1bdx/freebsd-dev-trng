@@ -31,6 +31,7 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdint.h>
@@ -158,6 +159,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr,
         "feedtrng: device name: %s\n",
         devname);
+    fflush(stderr);
 #endif
     /* open TRNG tty */
     if ((ttyfd = open(devname, O_RDONLY)) == -1) {
@@ -238,6 +240,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
                     "feedtrng: rsize %d after read\n",
                     (int)rsize);
+            fflush(stderr);
 #endif
             /* add the number of bytes read */
             i += rsize;
@@ -245,6 +248,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
                     "feedtrng: i %d after read\n",
                     (int)i);
+            fflush(stderr);
 #endif
         }
         if (discard == 0) {
@@ -257,16 +261,16 @@ int main(int argc, char *argv[]) {
                 }
                 sha512_hash(hashbuf, sizeof(hashbuf), hash);
                 /* write hash to output */
-                for (i = 0; i < 8; i++) {
-                    if ((wsize = write(trngfd, &(hash[i]),
-                                sizeof(uint64_t))) == -1) {
+                if ((wsize = write(trngfd, &hash,
+                           sizeof(uint64_t) * 8)) == -1) {
                         err(EX_IOERR, "trng hash write failed");
-                    }
-#ifdef DEBUG
-                    fprintf(stderr, "feedtrng: write %d hashed bytes\n",
-                                    (int)wsize);
-#endif
                 }
+#ifdef DEBUG
+                fprintf(stderr, "feedtrng: write %d hashed bytes ",
+                                    (int)wsize);
+                fprintf(stderr, "hash[0] = %" PRIu64 "\n", hash[0]);
+                fflush(stderr);
+#endif
             } else {
                 /* writing transparently */
                 if ((wsize = write(trngfd, rbuf,
@@ -276,6 +280,7 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
                 fprintf(stderr, "feedtrng: write %d bytes transparently\n",
                         (int)wsize);
+                fflush(stderr);
 #endif
             }
         } else {
