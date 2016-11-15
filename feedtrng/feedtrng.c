@@ -246,6 +246,11 @@ int main(int argc, char *argv[]) {
         memcpy(hashbuf + BUFFERSIZE, &hash, sizeof(uint64_t) * 4);
         /* compute sha512 hash */
         sha512_hash(hashbuf, sizeof(hashbuf), hash);
+#ifdef DEBUG
+        fprintf(stderr, "feedtrng: Compute sha512 of %d bytes\n",
+                (int)sizeof(hashbuf));
+        fflush(stderr);
+#endif
         /* write hash to output */
         if ((wsize = write(trngfd, &hash, sizeof(uint64_t) * 8)) == -1) {
           err(EX_IOERR, "trng hash write failed");
