@@ -243,10 +243,8 @@ int main(int argc, char *argv[]) {
       if (transparent == 0) {
         memcpy(hashbuf, rbuf, BUFFERSIZE);
         /* copy half of hashed output into hashbuf */
-        for (i = 0; i < 4; i++) {
-          memcpy(hashbuf + BUFFERSIZE + (i * sizeof(uint64_t)), &(hash[i]),
-                 sizeof(uint64_t));
-        }
+        memcpy(hashbuf + BUFFERSIZE, &hash, sizeof(uint64_t) * 4);
+        /* compute sha512 hash */
         sha512_hash(hashbuf, sizeof(hashbuf), hash);
         /* write hash to output */
         if ((wsize = write(trngfd, &hash, sizeof(uint64_t) * 8)) == -1) {
