@@ -55,6 +55,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 15-NOV-2016: 0.5.1 (Apply clang-format, Fix loops in feedtrng, add macros in trng)
 * 14-NOV-2016: 0.5.0 (FreeBSD 11 or later only, remove rndtest(4) support)
 * 10-JUL-2016: 0.4.0 (Preliminary fix for FreeBSD 11)
 * 10-OCT-2015: 0.3.3 (Use SHA512 hash for 1:8 compression as default)
