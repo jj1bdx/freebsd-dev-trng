@@ -1,0 +1,63 @@
+#!/bin/sh
+# $Id: feedtrng,v 1.3 2017/08/11 03:45:24 root Exp root $
+
+# PROVIDE: feedtrng
+# REQUIRE: FILESYSTEMS
+# BEFORE: random netif
+# KEYWORD: nojail shutdown
+
+# Add the following lines to /etc/rc.conf.local or /etc/rc.conf
+# to enable this service:
+#
+# feedtrng_enable (bool):   Set to NO by default.
+# Set it to YES to enable feedtrng.
+#
+# feedtrng_pidfile (string):
+#    name of pid file (default to /var/run/feedtrng.pid)
+# feedtrng_device (string):
+#    Required path to the feedtrng source device
+#
+
+. /etc/rc.subr
+
+name="feedtrng"
+rcvar="feedtrng_enable"
+
+start_cmd="feedtrng_start"
+stop_cmd="feedtrng_stop"
+
+load_rc_config ${name}
+: ${feedtrng_enable:="NO"}
+: ${feedtrng_pidfile:="/var/run/${name}.pid"}
+: ${feedtrng_device:=""}
+
+command="/usr/local/bin/feedtrng"
+daemon="/usr/sbin/daemon"
+pidfile="${feedtrng_pidfile}"
+
+feedtrng_start() {
+    echo -n "Starting feedtrng: "
+    ${daemon} -p ${pidfile} ${command} -d ${feedtrng_device}
+    RETVAL=$?
+    if [ $RETVAL = 0 ]; then
+        echo "OK"
+    else
+        echo "FAILED"
+    fi
+    return  $RETVAL
+}
+
+feedtrng_stop() {
+    echo -n "Stopping feedtrng: "
+    kill -TERM `/bin/cat ${pidfile}`
+    RETVAL=$?
+    if [ $RETVAL = 0 ]; then
+        echo "OK"
+    else
+        echo "FAILED"
+    fi
+    return  $RETVAL
+}
+
+load_rc_config $name
+run_rc_command "$1"
