@@ -20,7 +20,7 @@ kernel.
 
 ## Tested environment
 
-* FreeBSD amd64 11.0-STABLE r308609
+* FreeBSD amd64 11.1-STABLE r322350
 
 ## How this works
 
@@ -55,6 +55,7 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
+* 11-AUG-2017: 0.5.2 (Add rc.d script)
 * 15-NOV-2016: 0.5.1 (Apply clang-format, Fix loops in feedtrng, add macros in trng)
 * 14-NOV-2016: 0.5.0 (FreeBSD 11 or later only, remove rndtest(4) support)
 * 10-JUL-2016: 0.4.0 (Preliminary fix for FreeBSD 11)
@@ -94,6 +95,11 @@ harvesting from the Ethernet traffic. See random(4) for the details.
     feedtrng -d cuaU1 -s 9600
     # for usage
     feedtrng -h
+
+## How to run feedtrng as a daemon
+
+* Copy `local-rc.d/feedtrng` as `/usr/local/etc/rc.d/feedtrng`
+* Set `feedtrng_enable` and `feedtrng_device` in `/etc/rc.conf` accordingly
 
 ## tty discipline of the input tty
 
