@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   int dflag = 0;
   int ch;
   char *input;
-  char inputbase[MAXPATHLEN];
+  char *inputbase;
   char devname[MAXPATHLEN];
   long speedval = 115200L;
   int oflag = 0;
@@ -106,8 +106,8 @@ int main(int argc, char *argv[]) {
       if ((input = strndup(optarg, MAXPATHLEN)) == NULL) {
         errx(EX_USAGE, "device input string error");
       }
-      if (NULL == basename_r(input, inputbase)) {
-        errx(EX_OSERR, "device input basename_r failed");
+      if ((inputbase = strndup(basename(input), MAXPATHLEN)) == NULL) {
+        errx(EX_OSERR, "device input basename failed");
       }
       if ((*inputbase == '/') || (*inputbase == '.')) {
         errx(EX_USAGE, "illegal path in inputbase");
