@@ -20,7 +20,8 @@ kernel.
 
 ## Tested environment
 
-* FreeBSD amd64 11.1-STABLE r322350
+* FreeBSD amd64 12.0-PRERELEASE r340660 (for 0.6.0 and later)
+* For FreeBSD 11.x, use tag `0.5.2`
 
 ## How this works
 
@@ -55,7 +56,8 @@ harvesting from the Ethernet traffic. See random(4) for the details.
 
 ## Version
 
-* 11-AUG-2017: 0.5.2 (Add rc.d script)
+* 20-NOV-2018: 0.6.0 (Modification for FreeBSD 12.0 applied)
+* 11-AUG-2017: 0.5.2 (Add rc.d script, last version for FreeBSD 11.x)
 * 15-NOV-2016: 0.5.1 (Apply clang-format, Fix loops in feedtrng, add macros in trng)
 * 14-NOV-2016: 0.5.0 (FreeBSD 11 or later only, remove rndtest(4) support)
 * 10-JUL-2016: 0.4.0 (Preliminary fix for FreeBSD 11)
