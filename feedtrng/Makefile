@@ -3,7 +3,8 @@ PROG=	feedtrng
 SRCS=	feedtrng.c sha512.c sha512-api.c
 MAN=
 
+CSTD= gnu11
 #CFLAGS+= -DDEBUG -g
-CFLAGS+= -O2 -pipe -std=c99 -pedantic -Wall
+CFLAGS+= -O2 -pipe -pedantic -Wall
 
 .include <bsd.prog.mk>
