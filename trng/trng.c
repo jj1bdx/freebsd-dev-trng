@@ -174,7 +174,10 @@ static int trng_write(struct cdev *dev __unused, struct uio *uio,
     /* 11.x and later only */
     /* Caution: treated as a PURE random number sequence */
     /* TODO: must add a new class */
-    random_harvest_fast(buf, amt, amt * NBBY / 2, RANDOM_NET_ETHER);
+    /* for 11.x, use
+       random_harvest_fast(buf, amt, amt * NBBY / 2, RANDOM_NET_ETHER);
+    */
+    random_harvest_fast(buf, amt, RANDOM_NET_ETHER);
 #ifdef DEBUG
     printf("trng_write: put %zu bytes\n", amt);
 #endif /* DEBUG */
